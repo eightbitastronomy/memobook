@@ -37,7 +37,7 @@ class Memobook:
     def __init__(self,**kwargs):
         if "ctrl" in kwargs.keys():
             try:
-                self.ctrl = extconf.load(kwargs["ctrl"])
+                self.ctrl = extconf.load_file(kwargs["ctrl"])
             except Exception as e:
                 print("Error loading or preparing memobook: " + str(e))
                 return
