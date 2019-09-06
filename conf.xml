@@ -1,11 +1,14 @@
-<?xml version="1.0" ?><configuration>  
-    <loc>/home/travertine/help</loc>  
-      
-    <db>    
-      <src>memotest1.db</src>    
+<?xml version="1.0" ?>
+  <configuration>
+    <db>
+      <src>memotest1.db</src>
       <table>bookmarks</table>
-      <scan>/home/travertine/code/memobook/data</scan><scan>/home/travertine/help/python</scan><scan>/home/travertine/note</scan></db>
-    <suff>.txt</suff>  
-    
-    
-  <wrap>word</wrap><x>808</x><y>296</y></configuration>
+    </db>
+    <suff>.txt</suff>
+    <wrap>word</wrap>
+    <open>/home/travertine/help/dos</open>
+    <save>/home/travertine/help/audiovideo</save>
+    <loc>/home/travertine/code/memobook</loc>
+    <x>700</x>
+    <y>357</y>
+  </configuration>
