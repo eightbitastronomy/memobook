@@ -3,6 +3,7 @@
     <db>
       <src>memotest1.db</src>
       <table>bookmarks</table>
+      <scan>.</scan>
     </db>
     <suff>.txt</suff>
     <wrap>word</wrap>
