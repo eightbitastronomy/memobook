@@ -58,12 +58,13 @@ class Configuration(dict):
                 newt = self.__doc.createTextNode(str(v))
                 newn.appendChild(newt)
                 self.__src.appendChild(newn)
+            dict.__setitem__(self,key,tuple(val))
         else:
             newn = self.__doc.createElement(key)
             newt = self.__doc.createTextNode(str(val))
             newn.appendChild(newt)
             self.__src.appendChild(newn)
-        dict.__setitem__(self,key,tuple(val))
+            dict.__setitem__(self,key,val)
 
     def xml(self):
         return self.__doc.toprettyxml()
