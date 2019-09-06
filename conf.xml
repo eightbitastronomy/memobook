@@ -7,9 +7,7 @@
     </db>
     <suff>.txt</suff>
     <wrap>word</wrap>
-    <open>/home/travertine/help/dos</open>
-    <save>/home/travertine/help/audiovideo</save>
-    <loc>/home/travertine/code/memobook</loc>
+    <loc>.</loc>
     <x>700</x>
     <y>357</y>
   </configuration>
