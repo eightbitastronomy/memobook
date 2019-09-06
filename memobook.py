@@ -47,6 +47,8 @@ class Memobook:
                     self.ctrl["loc"] = '.'
                 else:
                     self.ctrl["loc"] = working_loc
+        if not ( "scan" in self.ctrl["db"].keys() ):
+            self.ctrl["db"]["scan"] = "."
         if "data" in kwargs.keys():
             self.data = kwargs["data"]
         else:
@@ -335,21 +337,30 @@ class Memobook:
 
     
     def __open_pop_add( self,win,manlist,manitems ):  # populate button: add directory
-        new_dir = filedialog.askdirectory(initialdir=manitems[0],title="Choose a scan directory",parent=win )
+        if len(manitems)>0:
+            new_dir = filedialog.askdirectory(initialdir=manitems[0],title="Choose a scan directory",parent=win )
+        else:
+            new_dir = filedialog.askdirectory(initialdir=self.ctrl["loc"],title="Choose a scan directory",parent=win )
         if new_dir:
             manitems.append(new_dir)
             manlist.insert(END,str(new_dir))
 
         
     def __open_pop_remove( self,manlist,manitems ):  # populate button: remove directory
-        for index in manlist.curselection():
+        index_list = list(manlist.curselection())
+        index_list.sort(reverse=True)
+        #for index in manlist.curselection():
+        for index in index_list:
             manitems.pop(index)
             manlist.delete(index)
 
         
     def __open_pop_apply( self,win,new_scan ):  # populate button: apply changes
         self.data.clear()
-        self.ctrl["db"]["scan"] = list(new_scan)
+        if len(new_scan)>0:
+            self.ctrl["db"]["scan"] = list(new_scan)
+        else:
+            self.ctrl["db"]["scan"] = "."
         self.data.populate()
         win.destroy()
 
