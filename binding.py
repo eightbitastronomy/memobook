@@ -64,10 +64,10 @@ class Binding():
 
 
 class FileBinding(Binding):
-    __save_dir = None
-    __open_dir = None
+    __ctrl = None
     __toc = {}
     def __init__(self,ctrl):       # an ExternalConfiguration is still required because I may want to use encoding options, etc, as the project grows
+        self.__ctrl = ctrl
         src = ctrl["loc"]
         if src is None:
             p = pathlib.Path(".")
@@ -204,7 +204,8 @@ class FileBinding(Binding):
         
     def populate(self):
         self.__toc = {}
-        self.__delve(pathlib.Path(self._src) )
+        for directory in self.__ctrl["db"]["scan"]:
+            self.__delve(pathlib.Path(directory) )
 
     def clear(self):
         pass
@@ -218,22 +219,31 @@ class FileBinding(Binding):
         return ret_list
 
     def get_active_open(self):
-        return self.__open_dir
+        if "open" in self.__ctrl.keys():
+            return self.__ctrl["open"]
+        else:
+            return self.__ctrl["loc"]
 
     def set_active_open(self,d):
-        self.__open_dir = d
+        self.__ctrl["open"] = d
 
     def get_active_save(self):
-        return self.__save_dir
+        if "save" in self.__ctrl.keys():
+            return self.__ctrl["save"]
+        else:
+            return self.__ctrl["loc"]
 
     def set_active_save(self,d):
-        self.__save_dir = d
-        
+        self.__ctrl["save"] = d
+
     def get_active_base(self):
         return self._src
 
     def set_active_base(self,d):
         self.set_source(d)
+        self.__ctrl["loc"] = d
+
+
 
     
 
@@ -251,15 +261,12 @@ class DatabaseBinding(Binding):
     __db_name = None
     __scan_list = None
     __base_dir = None
-    __open_dir = None
-    __save_dir = None
     __ctrl = None
     __cursor = None
     
     def __init__(self,ctrl):
         self.__ctrl = ctrl
-        self.__save_dir = self.__open_dir = self.__base_dir = ctrl["loc"]
-        self.__db_name = ctrl["db"]["src"]
+        self.__db_name = str(ctrl["loc"]+os.sep+ctrl["db"]["src"])
         try:
             self._src = sqlite3.connect(self.__db_name)
         except Exception as e:
@@ -376,22 +383,28 @@ class DatabaseBinding(Binding):
                 self.__cursor.execute('''delete from bookmarks where ?=?''',parameters)
 
     def get_active_open(self):
-        return self.__open_dir
+        if "open" in self.__ctrl.keys():
+            return self.__ctrl["open"]
+        else:
+            return self.__ctrl["loc"]
 
     def set_active_open(self,d):
-        self.__open_dir = d
+        self.__ctrl["open"] = d
 
     def get_active_save(self):
-        return self.__save_dir
+        if "save" in self.__ctrl.keys():
+            return self.__ctrl["save"]
+        else:
+            return self.__ctrl["loc"]
 
     def set_active_save(self,d):
-        self.__save_dir = d
+        self.__ctrl["save"] = d
 
     def get_active_base(self):
-        return self.__base_dir
+        return self.__ctrl["loc"]
 
     def set_active_base(self,d):
-        self.__base_dir = d
+        self.__ctrl["loc"] = d
             
     def open_note(self,nl=[]):
         ### retrieve a note from source ###

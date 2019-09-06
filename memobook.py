@@ -41,6 +41,12 @@ class Memobook:
             except Exception as e:
                 print("Error loading or preparing memobook: " + str(e))
                 return
+            else:
+                working_loc = str(os.path.dirname(kwargs["ctrl"]))
+                if working_loc == '':
+                    self.ctrl["loc"] = '.'
+                else:
+                    self.ctrl["loc"] = working_loc
         if "data" in kwargs.keys():
             self.data = kwargs["data"]
         else:
@@ -138,9 +144,9 @@ class Memobook:
             file_names = filedialog.askopenfilenames(initialdir=active_dir,title="Choose file(s) to open")
         if file_names:
             self.data.set_active_open(os.path.dirname(file_names[0]))
-        list_of_notes = self.data.open_note(file_names)
-        for nt in list_of_notes:
-            self.tabs.newpage(nt)
+            list_of_notes = self.data.open_note(file_names)
+            for nt in list_of_notes:
+                self.tabs.newpage(nt)
 
 
     def __save_note( self ):
@@ -270,7 +276,7 @@ class Memobook:
                 self.__close_page()
         self.ctrl["x"] = str(self.root.winfo_width()-self.offset[0])
         self.ctrl["y"] = str(self.root.winfo_height()-self.offset[1] - 19)
-        self.ctrl.print_config("conf.xml")
+        self.ctrl.print_config(str(self.ctrl["loc"]+os.sep+"conf.xml"))
         self.root.destroy()    
 
 
