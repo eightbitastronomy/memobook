@@ -7,8 +7,6 @@ class ListboxH(Listbox):
         self.__frame = Frame(master)
         self.__scroll = Scrollbar(self.__frame,orient="horizontal")
         self.__scroll.pack(side=BOTTOM,fill="x")
-        ##self.__list = Listbox(self.__frame,**kwargs)
-        ##kwargs.update({'xscrollcommand':self.__scroll.set})
         Listbox.__init__(self, self.__frame, **kwargs)
         self.config(self,xscrollcommand=self.__scroll.set)
         self.__scroll.config(command=self.xview)
@@ -26,7 +24,6 @@ class ScrolledTextH(st.ScrolledText):
     def __init__(self,master,**kwargs):
         self.__frame = Frame(master)
         self.__scroll = Scrollbar(self.__frame,orient="horizontal")
-        #self.__scroll.pack(side=BOTTOM,fill="x")
         kwargs.update({"master":self.__frame})
         st.ScrolledText.__init__(self,**kwargs)
         st.ScrolledText.config(self,xscrollcommand=self.__scroll.set)

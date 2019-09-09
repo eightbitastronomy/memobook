@@ -470,22 +470,3 @@ class DatabaseBinding(Binding):
             self._src.close()
         self._error = None
 
-
-
-
-
-
-        
-######### obsolete ####################
-### i must find a better way to implement unique id numbers!! ###
-#class UniqueHolder:
-#    def __init__(self,b=-1):
-#        self.__val = b
-#        
-#    def  __call__(self):
-#        self.__val+=1
-#        return self.__val
-#
-#    def __str__(self):
-#        self.__val += 1
-#        return str(self.__val)
