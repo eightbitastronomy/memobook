@@ -1,11 +1,18 @@
 import enum
+import PIL
+from PIL import Image as im
+from PIL import ImageTk
+import base64
+import io
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import scrolledtext
+from tkinter.font import *
 from tkinter import *
 from note import Note
 import hscroll
+from config import TAB_SIZE
 
 
 
@@ -23,86 +30,80 @@ class State(enum.IntEnum):
 ### cannot recall if I made any minor changes to it ###
 
 
-class CustomNotebook(ttk.Notebook):
-    """A ttk Notebook with close buttons on each tab"""
+class NotebookCloseTab(ttk.Notebook):
     
-    __initialized = False
+    #__initialized = False
 
     def __init__(self, *args, **kwargs):
-        if not self.__initialized:
-            self.__initialize_custom_style()
-            self.__inititialized = True
-
-        kwargs["style"] = "CustomNotebook"
+        #if not self.__initialized:
+        self.__set_style()
+        #    self.__initialized = True
+        kwargs["style"] = "NotebookCloseTab"
         ttk.Notebook.__init__(self, *args, **kwargs)
-        
         self._active = None
-        
         self.bind("<ButtonPress-1>", self.on_close_press, True)
         self.bind("<ButtonRelease-1>", self.on_close_release)
 
     def on_close_press(self, event):
-        """Called when the button is pressed over the close button"""
-            
         element = self.identify(event.x, event.y)
-            
         if "close" in element:
             index = self.index("@%d,%d" % (event.x, event.y))
             self.state(['pressed'])
             self._active = index
 
     def on_close_release(self, event):
-        """Called when the button is released over the close button"""
         if not self.instate(['pressed']):
             return
-
         element =  self.identify(event.x, event.y)
         index = self.index("@%d,%d" % (event.x, event.y))
-
         if "close" in element and self._active == index:
             self.forget(index)
             self.event_generate("<<NotebookTabClosed>>")
-
         self.state(["!pressed"])
         self._active = None
 
-    def __initialize_custom_style(self):
+    def __set_style(self):
         style = ttk.Style()
-        self.images = (
-            tk.PhotoImage("img_close", data='''
-            R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
-            d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
-            5kEJADs=
-            '''),
-            tk.PhotoImage("img_closeactive", data='''
-            R0lGODlhCAAIAMIEAAAAAP/SAP/bNNnZ2cbGxsbGxsbGxsbGxiH5BAEKAAQALAAA
-            AAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU5kEJADs=
-            '''),
-            tk.PhotoImage("img_closepressed", data='''
-            R0lGODlhCAAIAMIEAAAAAOUqKv9mZtnZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
-            d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
-            5kEJADs=
-            ''')
-        )
+        #custom_font = tkinter.font.Font(family="Helvetica",size=8,weight=tkinter.font.NORMAL)
+        #style.configure('NotebookCloseTab.Tab',font=custom_font)
+
+        close_im = im.open(io.BytesIO(base64.b64decode('''
+        R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
+        d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
+        5kEJADs=
+        ''')))
+        close_tk = ImageTk.PhotoImage(close_im.resize((TAB_SIZE,TAB_SIZE)),name="img_close")
+        closeact_im = im.open(io.BytesIO(base64.b64decode('''
+        R0lGODlhCAAIAMIEAAAAAP/SAP/bNNnZ2cbGxsbGxsbGxsbGxiH5BAEKAAQALAAA
+        AAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU5kEJADs=
+        ''')))
+        closeact_tk = ImageTk.PhotoImage(closeact_im.resize((TAB_SIZE,TAB_SIZE)),name="img_closeactive")
+        closepr_im = im.open(io.BytesIO(base64.b64decode('''
+        R0lGODlhCAAIAMIEAAAAAOUqKv9mZtnZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
+        d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
+        5kEJADs=
+        ''')))
+        closepr_tk = ImageTk.PhotoImage(closepr_im.resize((TAB_SIZE,TAB_SIZE)),name="img_closepressed")
+        self.images = (close_tk,closeact_tk,closepr_tk)
 
         style.element_create("close", "image", "img_close",
                              ("active", "pressed", "!disabled", "img_closepressed"),
-                             ("active", "!disabled", "img_closeactive"), border=8, sticky='')
-        style.layout("CustomNotebook", [("CustomNotebook.client", {"sticky": "nswe"})])
-        style.layout("CustomNotebook.Tab", [
-            ("CustomNotebook.tab", {
+                             ("active", "!disabled", "img_closeactive"), border=TAB_SIZE, sticky='')
+        style.layout("NotebookCloseTab", [("NotebookCloseTab.client", {"sticky": "nswe"})])
+        style.layout("NotebookCloseTab.Tab", [
+            ("NotebookCloseTab.tab", {
                 "sticky": "nswe",
                 "children": [
-                    ("CustomNotebook.padding", {
+                    ("NotebookCloseTab.padding", {
                         "side": "top",
                         "sticky": "nswe",
                         "children": [
-                            ("CustomNotebook.focus", {
+                            ("NotebookCloseTab.focus", {
                                 "side": "top",
                                 "sticky": "nswe",
                                 "children": [
-                                    ("CustomNotebook.label", {"side": "left", "sticky": ''}),
-                                    ("CustomNotebook.close", {"side": "left", "sticky": ''}),
+                                    ("NotebookCloseTab.label", {"side": "left", "sticky": ''}),
+                                    ("NotebookCloseTab.close", {"side": "left", "sticky": ''}),
                                 ]
                             })
                         ]
@@ -110,24 +111,32 @@ class CustomNotebook(ttk.Notebook):
                 ]
             })
         ])
-
+        
         
 
 
     
-class Page():
+class Page:
     _blank=True
     _alt=False
     _state = State.BLNK
     _wrap="word"
-    def __init__(self,win,nt=None):
-        self.note = Note(nt)
+    def __init__(self,win,**kwargs):
         self.tab = Frame(win)
         self.tab.pack(fill='both',expand=YES)
-        self.txt = hscroll.ScrolledTextH(master=self.tab,wrap=tk.WORD,undo=True,height=10,width=20)
-        if nt is not None:
+        tmp_height = 10
+        tmp_width = 20
+        if "height" in kwargs.keys():
+            tmp_height = kwargs["height"]
+        if "width" in kwargs.keys():
+            tmp_width = kwargs["width"]
+        self.txt = hscroll.ScrolledTextH(master=self.tab,wrap=tk.WORD,undo=True,height=tmp_height,width=tmp_width)
+        if "note" in kwargs.keys():
             self._state = State.NBLNK
-            self.txt.insert(tk.END,nt.text)
+            self.note = kwargs["note"]
+            self.txt.insert(tk.END,self.note.text)
+        else:
+            self.note = Note()
         self.txt.pack(fill='both',expand=YES)
     def setnotblank(self):
         self._state = State.NBLNK
@@ -165,7 +174,7 @@ class Page():
 
 
         
-class NotebookPlus(CustomNotebook):
+class Book(NotebookCloseTab):
 
     _l = -1             # tracks num of blank tabs
     _pgs = []           # the pages associated with tabs
@@ -174,8 +183,8 @@ class NotebookPlus(CustomNotebook):
     _ctrl = None        # ExternalConfiguration pointer
     
     def __init__(self,*args,**kwargs):
-        CustomNotebook.__init__(self,*args,**kwargs)
-
+        NotebookCloseTab.__init__(self,*args,**kwargs)
+        
     def ruling(self,ctrl):
         self._ctrl = ctrl
         
@@ -193,9 +202,9 @@ class NotebookPlus(CustomNotebook):
                 newpg.togglewrap(self._ctrl["wrap"])
             self._pgs.append( newpg )
             if self._l == 0:
-                CustomNotebook.add( self,newpg.tab,text="Blank" )
+                NotebookCloseTab.add( self,newpg.tab,text="Blank" )
             else:
-                CustomNotebook.add( self,newpg.tab,text="Blank(" + str(self._l) + ")" )
+                NotebookCloseTab.add( self,newpg.tab,text="Blank(" + str(self._l) + ")" )
             self.select( len(self._pgs)-1 )
 
     def newpage(self,nt):
@@ -223,13 +232,13 @@ class NotebookPlus(CustomNotebook):
             curpg.txt.edit_modified(False)
             return
         # if the page was not blank, add another tab/page for the input-note
-        newpg = Page( self,nt )
+        newpg = Page( self,note=nt )
         if self._ctrl:
             newpg.togglewrap(self._ctrl["wrap"])
         self._pgs.append( newpg )
         newpg.setnotblank()
         newpg.txt.edit_modified(False)
-        CustomNotebook.add( self,newpg.tab,text=nt.title )
+        NotebookCloseTab.add( self,newpg.tab,text=nt.title )
         self.select( len(self._pgs)-1 )
 
     def getnoteref(self,tabnum):
@@ -291,10 +300,10 @@ class NotebookPlus(CustomNotebook):
             p.togglewrap(buffer_wrap)
         
     def add(self,child,**kw):
-        #allows backward compatility with CustomNotebook
+        #allows backward compatility with NotebookCloseTab
         self._tabs.append(child)
         self._texts.append(None)
-        CustomNotebook.add(self,child,**kw)
+        NotebookCloseTab.add(self,child,**kw)
 
     def on_close_release(self, event):
         """Called when the button is released over the close button"""

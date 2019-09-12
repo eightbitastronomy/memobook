@@ -41,3 +41,24 @@ class ScrolledTextH(st.ScrolledText):
         self.__scroll.pack(side=BOTTOM,fill="x")
     def __str__(self):
         return str(self.__frame)
+
+
+class TextCompound(ScrolledTextH):
+    __hook = None
+    def __init__(self,master,**kwargs):
+        if "hook" in kwargs.keys():
+            self.__hook = kwargs["hook"]
+            del kwargs["hook"]
+        ScrolledTextH.__init__(self,master,**kwargs)
+        self._original = self._w + "_original"
+        self.tk.call("rename", self._w, self._original)
+        self.tk.createcommand(self._w, self._compound)
+
+    def _compound(self, cmd, *args):
+        compound_cmd = (self._original, cmd) + args
+        cmd_result = self.tk.call(compound_cmd)
+        if cmd in ("insert", "delete", "replace"):
+            if self.__hook is not None:
+                self.__hook()
+            self.event_generate("<<TextModified>>")
+        return cmd_result

@@ -6,7 +6,7 @@ from tkinter import messagebox
 from tkinter import ttk
 from tkinter import filedialog
 from note import Note
-from notebook import NotebookPlus
+from book import Book
 import extconf
 from hscroll import ListboxH,ScrolledTextH
 from binding import FileBinding,DatabaseBinding
@@ -65,7 +65,7 @@ class Memobook:
         if "tabs" in kwargs.keys():
             self.tabs = kwargs["tabs"]
         else:
-            self.tabs = NotebookPlus(self.root,width=self.ctrl["x"],height=self.ctrl["y"])
+            self.tabs = Book(self.root,width=self.ctrl["x"],height=self.ctrl["y"])
             self.tabs.ruling(self.ctrl)
             self.tabs.set_save_hook(lambda :self.__save_note())
             self.tabs.set_close_hook(lambda :self.__close_page())
