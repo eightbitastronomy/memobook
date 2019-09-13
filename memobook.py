@@ -1,3 +1,6 @@
+'''Memobook class file: the frontend and control structure for the application. Configuration values are in config.py or loaded via extconf.py. Database is handled in binding.py.'''
+
+
 import enum
 import os
 import os.path
@@ -16,20 +19,20 @@ from binding import FileBinding,DatabaseBinding
 
 
 class Heading(enum.Enum):
-    MF='File'
-    ME='Edit'
-    MM='Mark'
-    MS='Sources'
+    MF = 'File'
+    ME = 'Edit'
+    MM = 'Mark'
+    MS = 'Sources'
 
     
 
 
 class Memobook:
 
-    root=None
-    tabs=None
-    menu=None
-    offset=[]
+    root = None
+    tabs = None
+    menu = None
+    offset = []
     ctrl = None
     data = None
 
@@ -69,13 +72,12 @@ class Memobook:
             self.tabs.ruling(self.ctrl)
             self.tabs.set_save_hook(lambda :self.__save_note())
             self.tabs.set_close_hook(lambda :self.__close_page())
-            self.tabs.bind("<Double-Button-1>",lambda e: self.tabs.blankpage(e))
+            self.tabs.bind("<Double-Button-1>",lambda e: self.tabs.newpage(None))
         self.menu = Menu(self.root)
         self.__set_bindings()
         self.tabs.grid_columnconfigure(0,weight=1)
         self.tabs.grid_rowconfigure(0,weight=1)
         self.tabs.grid(sticky="nswe")
-        self.tabs.blankpage(None)
         self.__populate_menus()
         self.root.config(menu=self.menu)
         self.root.grid_columnconfigure(0,weight=1)
@@ -87,13 +89,13 @@ class Memobook:
         mdict = { Heading.MF:Menu(self.menu,tearoff=0), Heading.ME:Menu(self.menu,tearoff=0), Heading.MM:Menu(self.menu,tearoff=0), Heading.MS:Menu(self.menu,tearoff=0) }
         for k in mdict.keys():
             self.menu.add_cascade(label=k.value,menu=mdict[k])
-        mdict[Heading.MF].add_command(label="New",command=lambda :self.tabs.blankpage(None))
+        mdict[Heading.MF].add_command(label="New",command=lambda :self.tabs.newpage(None))
         mdict[Heading.MF].add_command(label="Open by mark",command=lambda :self.open_mark(self.__open_mark_open))
         mdict[Heading.MF].add_command(label="Open from file",command=lambda :self.open_file())
         mdict[Heading.MF].add_command(label="Save",command=lambda :self.__save_note())
         mdict[Heading.MF].add_command(label="Save as",command=lambda :self.__save_note_as())
         mdict[Heading.MF].add_separator()
-        mdict[Heading.MF].add_command(label="New tab",command=lambda :self.tabs.blankpage(None))
+        mdict[Heading.MF].add_command(label="New tab",command=lambda :self.tabs.newpage(None))
         mdict[Heading.MF].add_command(label="Close tab",command=lambda :self.__close_page())
         mdict[Heading.MF].add_command(label="Close all tabs",command=lambda :self.__close_all())
         mdict[Heading.MF].add_separator()
@@ -110,7 +112,7 @@ class Memobook:
         self.root.protocol("WM_DELETE_WINDOW",lambda :self.exit_all(None))
         self.root.bind("<Control-q>",lambda e:self.exit_all(None))
         self.root.bind("<Control-w>",lambda e:self.__close_page())
-        self.root.bind("<Control-n>",lambda e:self.tabs.blankpage(None))
+        self.root.bind("<Control-n>",lambda e:self.tabs.newpage(None))
         self.root.bind("<Control-s>",lambda e:self.__save_note())
         self.root.bind("<Alt-m>",lambda e: self.__mark_dialogue(mark_store))
 

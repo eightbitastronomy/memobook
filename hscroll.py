@@ -54,11 +54,15 @@ class TextCompound(ScrolledTextH):
         self.tk.call("rename", self._w, self._original)
         self.tk.createcommand(self._w, self._compound)
 
+    def set_hook(self,hook):
+        self.__hook = hook
+        
     def _compound(self, cmd, *args):
         compound_cmd = (self._original, cmd) + args
         cmd_result = self.tk.call(compound_cmd)
-        if cmd in ("insert", "delete", "replace"):
+        if (cmd=="edit") and ("modified" in args):
+            return cmd_result
+        elif cmd in ("insert", "delete", "replace"):
             if self.__hook is not None:
                 self.__hook()
-            self.event_generate("<<TextModified>>")
         return cmd_result
