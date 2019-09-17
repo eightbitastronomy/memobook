@@ -14,11 +14,15 @@ from tkinter import Toplevel
 from tkinter import END
 from tkinter import Frame
 from tkinter import Button
+from tkinter import Radiobutton
+from tkinter import StringVar
 from tkinter import Listbox
+from tkinter import TclError
 from book import Book
 import extconf
 from hscroll import ListboxH
 from binding import FileBinding, DatabaseBinding
+
 
 
 
@@ -36,6 +40,16 @@ class Heading(enum.Enum):
 
 
 
+    
+
+### despite using select, invoke, focus_set, event_generate, tk wouldn't set the OR radiobutton as default. ###
+### So this function is a workaround to force the issue.                                                    ###
+def _default_selection(var):
+    '''Workaround function to enforce radiobutton selection'''
+    var.set("or")
+
+
+    
     
 
 class Memobook:
@@ -78,6 +92,16 @@ class Memobook:
         else:
             self.root = Tk()
             self.root.title("Memobook")
+        # deal with hidden files for file dialogue by calling a dummy dialogue with nonsense options: (method taken from online forum)
+        # (this is done here and not in binding class because it is a front-end matter, not a back-end one)
+        try:
+            self.root.tk.call('tk_getOpenFile', '-flurpee')
+        except TclError:
+            #catch and discard the TclError that the nonsense option caused
+            pass
+        finally:
+            self.root.tk.call('set', '::tk::dialog::file::showHiddenBtn', '1')
+            self.root.tk.call('set', '::tk::dialog::file::showHiddenVar', '0')
         if "tabs" in kwargs.keys():
             self.tabs = kwargs["tabs"]
         else:
@@ -153,29 +177,70 @@ class Memobook:
 
 
     def open_mark( self,callback ):  # open by mark
-        toc = self.data.toc()
+        toc = list(self.data.toc())
         toc.sort(key=lambda x: x[0])
         getter = Toplevel(self.root)
         getter_list = ListboxH(getter,selectmode="multiple")
-        getter_items = [ item[0] for item in toc ]
-        for item in getter_items:
+        #getter_items = [ item[0] for item in toc ]
+        #for item in getter_items:
+        for item in toc:
             getter_list.insert(END,item)
         getter_list.pack()
-        retbutt = Button(getter,
+        button_frame = Frame(getter)
+        logic_variable = StringVar(None,"or")
+        radiobutt_OR = Radiobutton(button_frame,
+                                   text="OR",
+                                   variable=logic_variable,
+                                   command=lambda: _default_selection(logic_variable),  #this is the only way I could get tk to give default selection
+                                   value="or")
+        radiobutt_AND = Radiobutton(button_frame,
+                                    text="AND",
+                                    variable=logic_variable,
+                                    value="and")
+        #retbutt = Button(button_frame,
+        #                 text="Apply",
+        #                 command=lambda: callback(getter,
+        #                                          [ item for sublist in [ toc[j][1:] for j in getter_list.curselection()] for item in sublist],
+        #                                          logic_variable.get()),
+        #                 )
+        retbutt = Button(button_frame,
                          text="Apply",
                          command=lambda: callback(getter,
-                                                  [ item for sublist in [ toc[j][1:] for j in getter_list.curselection()] for item in sublist]))
-        retbutt.pack()
+                                                  [ toc[j] for j in getter_list.curselection() ],
+                                                  logic_variable.get()),
+                         )
+        radiobutt_OR.pack(side="left")
+        radiobutt_AND.pack(side="left")
+        retbutt.pack(side="left")
+        button_frame.pack(side="bottom")
+        radiobutt_OR.invoke()
 
 
-    def __open_mark_open( self,win,ls ):  # callback function for open_mark
+        
+    def __open_mark_open( self,win,ls,logic ):  # callback function for open_mark
         if ls:
-            notes = self.data.open_note(ls)
+            if logic == "or":
+                notes = self.data.open_from_toc(ls)
+            elif logic == "and":
+                notes = self.data.open_from_toc_intersection(ls)
+            else:
+                notes = []
             if not notes:
-                messagebox.showinfo("Open error",
-                                    "Unable to open file: " + str(self.data.get_last_error()))
-            for note in notes:
-                self.tabs.newpage(note)
+                last = self.data.get_last_error()
+                if last:
+                    messagebox.showinfo("Open error",
+                                    "Unable to open file(s): " + str(self.data.get_last_error()))
+                else:
+                    failure = ", ".join(ls)
+                    if logic == "or":
+                        messagebox.showinfo("Open failure",
+                                            "Unable to find files for any of the following marks: " + failure)
+                    else:
+                        messagebox.showinfo("Open failure",
+                                            "Unable to find files containing each of the following marks: " + failure)
+            else:
+                for note in notes:
+                    self.tabs.newpage(note)
         win.destroy()
 
 
@@ -199,7 +264,7 @@ class Memobook:
         if self.tabs.changed(index) is False:
             return
         save_nt = self.tabs.getnoteref(index)
-        save_nt.text = self.tabs.getpageref(index).txt.get("1.0","end-1c")
+        save_nt.body = self.tabs.getpageref(index).txt.get("1.0","end-1c")
         ret_val = self.__process_save_target(save_nt,
                                              callback=lambda c:self.tabs.tab(index,text=c))
         if ( ret_val > 0 ):
@@ -218,7 +283,7 @@ class Memobook:
     def __save_note_as( self ):
         index = self.tabs.index("current")
         save_nt = self.tabs.getnoteref(index)
-        save_nt.text = self.tabs.getpageref(index).txt.get("1.0","end-1c")
+        save_nt.body = self.tabs.getpageref(index).txt.get("1.0","end-1c")
         ret_targ = self.__process_save_target(save_nt,
                                               saveas=True,
                                               callback=lambda c:self.tabs.tab(index,text=c))

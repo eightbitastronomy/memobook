@@ -1,8 +1,15 @@
+'''Classes implementing scrollbars; classes implementing proxy-layers to facilitate edit-detection of text'''
+
+
+
 from tkinter import *
 from tkinter import scrolledtext as st
 
 
+
+
 class ListboxH(Listbox):
+    '''A ListBox with a horizontal scrollbar'''
     def __init__(self,master=None,**kwargs):
         self.__frame = Frame(master)
         self.__scroll = Scrollbar(self.__frame,orient="horizontal")
@@ -20,7 +27,10 @@ class ListboxH(Listbox):
     def __str__(self):
         return str(self.__frame)
 
+
+    
 class ScrolledTextH(st.ScrolledText):
+    '''A ScrolledText with a horizontal scrollbar'''
     def __init__(self,master,**kwargs):
         self.__frame = Frame(master)
         self.__scroll = Scrollbar(self.__frame,orient="horizontal")
@@ -44,6 +54,7 @@ class ScrolledTextH(st.ScrolledText):
 
 
 class TextCompound(ScrolledTextH):
+    '''A ScrolledTextH that filters for text edits'''
     __hook = None
     def __init__(self,master,**kwargs):
         if "hook" in kwargs.keys():
@@ -59,10 +70,17 @@ class TextCompound(ScrolledTextH):
         
     def _compound(self, cmd, *args):
         compound_cmd = (self._original, cmd) + args
-        cmd_result = self.tk.call(compound_cmd)
-        if (cmd=="edit") and ("modified" in args):
+        try:
+            cmd_result = self.tk.call(compound_cmd)
+        except TclError as tcle:
+            if str(tcle) == "nothing to undo":
+                pass
+            else:
+                raise tcle
+        else:
+            if (cmd=="edit") and ("modified" in args):
+                return cmd_result
+            elif cmd in ("insert", "delete", "replace"):
+                if self.__hook is not None:
+                    self.__hook()
             return cmd_result
-        elif cmd in ("insert", "delete", "replace"):
-            if self.__hook is not None:
-                self.__hook()
-        return cmd_result

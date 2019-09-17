@@ -29,6 +29,12 @@ class Binding():
     def open_note(self,n):
         ### retrieve a note from source ###
         pass
+    def open_from_toc(self,n):
+        ### retrieve a note via toc entry ###
+        pass
+    def open_from_toc_intersection(self,n):
+        ### retrieve a note via toc entry satisfying all mark criteria ###
+        pass
     def save_note(self):
         ### write a note to the source ###
         pass
@@ -79,7 +85,7 @@ class FileBinding(Binding):
             self._src = p
         else:
             self._error.append(Exception("Inadequate permissions for file source"))
-                
+                    
     def list(self):
         if self._src:
             print("CWD is: " + str(os.getcwd()) )
@@ -118,8 +124,9 @@ class FileBinding(Binding):
                     newnt = Note()
                     newnt.title =os.path.basename(name)
                     newnt.ID = name
+                    newnt.body=""
                     for l in file_handle.readlines():
-                        newnt.text += l
+                        newnt.body += l
                         #askopenfilenames does not leave the "10" char, and this next command removes its line feeds.#
                         #if curses.ascii.isctrl(newnt.text[len(newnt.text)-1]):
                         #    newnt.text = newnt.text[:len(newnt.text)-1]
@@ -131,6 +138,22 @@ class FileBinding(Binding):
                 note_list.append(newnt)
         return note_list
 
+
+    def open_from_toc(self,ls):
+        if not ls:
+            return None
+        research_list = [ item for sublist in [ self.__toc[entry] for entry in ls ] for item in sublist ]
+        return self.open_note(research_list)
+
+    def open_from_toc_intersection(self,ls):
+        if not ls:
+            return None
+        research_list = []
+        for entry in ls:
+            research_list.append(self.__toc[entry])
+        intersect_set = set.intersection( *(set(item) for item in research_list) )
+        return self.open_note(list(intersect_set))
+    
     def save_note(self,nt):
         if nt is None:
             e = Exception("set_save_as argument requires note object")
@@ -138,7 +161,7 @@ class FileBinding(Binding):
             return True
         try:
             handle = open(nt.ID,"w")
-            handle.write(nt.text)
+            handle.write(nt.body)
             handle.close()
         except Exception as e:
             #print("File could not be written due to error: " + str(e) )
@@ -210,13 +233,16 @@ class FileBinding(Binding):
     def clear(self):
         pass
         
+    #def toc(self):
+    #    ret_list = []
+    #    for key,vals in self.__toc.items():
+    #        tmp_list = [ item for item in vals ]
+    #        tmp_list.insert(0,key)
+    #        ret_list.append(tmp_list)
+    #    return ret_list
+
     def toc(self):
-        ret_list = []
-        for key,vals in self.__toc.items():
-            tmp_list = [ item for item in vals ]
-            tmp_list.insert(0,key)
-            ret_list.append(tmp_list)
-        return ret_list
+        return self.__toc.keys()
 
     def get_active_open(self):
         if "open" in self.__ctrl.keys():
@@ -304,11 +330,19 @@ class DatabaseBinding(Binding):
             return None
 
     def populate(self):
-        self.__scan_list = list(self.__ctrl["db"]["scan"])
+        if isinstance(self.__ctrl["db"]["scan"],str):
+            self.__scan_list = [ self.__ctrl["db"]["scan"] ]
+        else:
+            self.__scan_list = list(self.__ctrl["db"]["scan"])
         if self.__scan_list:
             for dir_name in self.__scan_list:
                 self.__delve(pathlib.Path(dir_name))
                 self._src.commit()
+            if self._error:
+                print("Errors were encountered while populating database:")
+                for error in self._error:
+                    print(error)
+                self._error = []
         
     def __process_file(self,f):
         try:
@@ -328,7 +362,8 @@ class DatabaseBinding(Binding):
                 handle_text += l
             handle.close()
         except Exception as e:
-            self._error.append(e)
+            wrapper = Exception("<  " + str(f) + "  >  " + str(e))
+            self._error.append(wrapper)
             return
         marks = parse.parse(handle_text)
         for m in marks:
@@ -365,11 +400,14 @@ class DatabaseBinding(Binding):
         self.__cursor.execute('''select distinct mark from bookmarks''')
         mark_tuple = self.__cursor.fetchall()
         toc_list = []
-        for mark in mark_tuple:
-            self.__cursor.execute('''select file from bookmarks where mark=?''',mark)
-            query_list = [ item[0] for item in self.__cursor.fetchall() ]
-            query_list.insert(0,mark[0])
-            toc_list.append( query_list )
+        #for mark in mark_tuple:
+        #    self.__cursor.execute('''select file from bookmarks where mark=?''',mark)
+        #    query_list = [ item[0] for item in self.__cursor.fetchall() ]
+        #    query_list.insert(0,mark[0])
+        #    toc_list.append( query_list )
+        #return toc_list
+        for mt in mark_tuple:
+            toc_list.append(mt[0])
         return toc_list
     
     def clear(self,targetpair=()):
@@ -420,8 +458,9 @@ class DatabaseBinding(Binding):
                     newnt = Note()
                     newnt.title =os.path.basename(name)
                     newnt.ID = name
+                    newnt.body=""
                     for l in file_handle.readlines():
-                        newnt.text += l
+                        newnt.body += l
                         #askopenfilenames does not leave the "10" char, and this next command removes its line feeds.#
                         #if curses.ascii.isctrl(newnt.text[len(newnt.text)-1]):
                         #    newnt.text = newnt.text[:len(newnt.text)-1]
@@ -432,6 +471,31 @@ class DatabaseBinding(Binding):
                 newnt.parse()
                 note_list.append(newnt)
         return note_list
+
+    def open_from_toc(self,ls):
+        if not ls:
+            return None
+        research_list = []
+        for item in ls:
+            self.__cursor.execute('''select file from bookmarks where mark=?''',(item,))
+            for result in self.__cursor.fetchall():
+                research_list.append(result[0])
+        return self.open_note(research_list)
+
+    def open_from_toc_intersection(self,ls):
+        if not ls:
+            return None
+        research_list = []
+        for entry in ls:
+            self.__cursor.execute('''select file from bookmarks where mark=?''',(entry,))
+            buffer_list = []
+            for result in self.__cursor.fetchall():
+                buffer_list.append(result[0])
+            research_list.append(buffer_list)
+        intersect = list(set.intersection(*(set(item) for item in research_list)))
+        if not intersect:
+            return None
+        return self.open_note(intersect)
     
     def save_note(self,nt):
         ### write a note to the source ###
@@ -440,7 +504,7 @@ class DatabaseBinding(Binding):
             self._error.append(e)
             return True
         ### compare/update marks ###
-        nt.tags = parse.parse(nt.text)
+        nt.tags = parse.parse(nt.body)
         self.__cursor.execute('''select rowid,mark from bookmarks where file=?''',(nt.ID,))
         db_hits = self.__cursor.fetchall()
         for item in db_hits:
@@ -453,7 +517,7 @@ class DatabaseBinding(Binding):
         self._src.commit()
         try:
             handle = open(nt.ID,"w")
-            handle.write(nt.text)
+            handle.write(nt.body)
             handle.close()
         except Exception as e:
             self._error.append(e)
