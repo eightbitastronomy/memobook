@@ -1,28 +1,20 @@
 import enum
 import PIL
-from PIL import Image as im
-from PIL import ImageTk
 import base64
 import io
-#import tkinter as tk
+import tkinter
+import hscroll
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import scrolledtext
 from tkinter.font import *
-from tkinter import *
-from note import Note
-from page import *
-import hscroll
+from PIL import Image as im
+from PIL import ImageTk
+from note import Note, NoteMime
+from page import TextPage, ImagePage, State
 from config import TAB_SIZE
 
 
-
-#shouldn't I return this to Enum from IntEnum?
-class State(enum.IntEnum):
-    BLNK = 0      # unaltered, blank page
-    NBLNK = 1     # unaltered, page loaded with text, initial
-    CLEAN = 2
-    EDIT = 3      # page text has been altered
 
 
 
@@ -152,36 +144,29 @@ class Book(NotebookCloseTab):
 
     def newpage(self,nt):
         if nt is None:
-            # no note? Error, or called by a double-click event (binding in memobook). Exit.
+            # no note? Error, or called by a double-click event (binding in memobook). Blank-text and return.
             self.__blanktext(None)
             blank = self._pgs[len(self._pgs)-1]
             self.__ready(blank)
             return
         if len(self._pgs)>0:
             # tabs are already present, focus on the last...
-            curpg = self._pgs[self.index("current")]
-        else:
-            # no tabs are present, make a blank page and focus on it.
-            self.__blanktext(None)
-            curpg = self._pgs[0]
-        # from above, act according the page under focus:
-        if curpg.blank():
-            # if the page was blank, fill it with the input-note
-            self._l -= 1
-            curpg.note = Note(nt)
-            curpg.plate.replace("1.0",tkinter.END,curpg.note.body)
-            self.tab(self.index("current"),text=curpg.note.title)
+            curindex = self.index("current")
+            curpg = self._pgs[curindex]
+            if curpg.blank():
+                # blank page? drop it and move on
+                self._pgs.pop(curindex)
+                self.forget(curindex)
+                self.event_generate("<<NotebookTabClosed>>")
+                self._l -= 1
+        # make a new page based on mime-type
+        newpg = None
+        if nt.mime == NoteMime.TEXT:
+            newpg = TextPage(self,note=nt)
             if self._ctrl:
-                curpg.toggle_wrap(self._ctrl["wrap"])
-            curpg.setnotblank()
-            curpg.set_changed(False)
-            self.__ready(curpg)
-            self.showchangestate(curpg)
-            return
-        # if the page was not blank, add another tab/page for the input-note
-        newpg = TextPage( self,note=nt )
-        if self._ctrl:
-            newpg.toggle_wrap(self._ctrl["wrap"])
+                newpg.toggle_wrap(self._ctrl["wrap"])
+        if nt.mime == NoteMime.IMAGE:
+            newpg = ImagePage(self,nt)
         self._pgs.append( newpg )
         newpg.setnotblank()
         newpg.set_changed(False)
@@ -190,6 +175,7 @@ class Book(NotebookCloseTab):
         self.showchangestate(newpg)
         self.select( len(self._pgs)-1 )
 
+        
     def __ready(self,pg):
         pg.plate.set_hook(lambda:self.showchangestate(pg))
         pg.plate.focus_set()

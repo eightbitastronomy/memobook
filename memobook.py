@@ -22,7 +22,7 @@ from book import Book
 import extconf
 from hscroll import ListboxH
 from binding import FileBinding, DatabaseBinding
-
+from note import NoteMime
 
 
 
@@ -244,14 +244,30 @@ class Memobook:
         win.destroy()
 
 
+    def __build_file_types(self):
+        prep_list = []
+        for filetype in self.ctrl["mime"]:
+            tmp_list = None
+            if isinstance(self.ctrl["mime"][filetype]["suff"],str):
+                tmp_tuple = ( str(filetype + " files"), str("*" + self.ctrl["mime"][filetype]["suff"]) )
+            else:
+                tmp_type = [ str("*"+t) for t in self.ctrl["mime"][filetype]["suff"] ]
+                tmp_tuple = ( str(filetype + " files") , tuple(tmp_type) )
+            prep_list.append( tmp_tuple )
+        prep_list.append(("All files", "*.*"))
+        return tuple(prep_list)
+
+    
     def open_file( self ):  # open by file name
         active_dir = self.data.get_active_open()
         if not active_dir:
             file_names = filedialog.askopenfilenames(initialdir=self.data.active_base(),
-                                                     title="Choose file(s) to open")
+                                                     title="Choose file(s) to open",
+                                                     filetypes=self.__build_file_types())
         else:
             file_names = filedialog.askopenfilenames(initialdir=active_dir,
-                                                     title="Choose file(s) to open")
+                                                     title="Choose file(s) to open",
+                                                     filetypes=self.__build_file_types())
         if file_names:
             self.data.set_active_open(os.path.dirname(file_names[0]))
             list_of_notes = self.data.open_note(file_names)
@@ -264,7 +280,7 @@ class Memobook:
         if self.tabs.changed(index) is False:
             return
         save_nt = self.tabs.getnoteref(index)
-        save_nt.body = self.tabs.getpageref(index).txt.get("1.0","end-1c")
+        save_nt.body = self.tabs.getpageref(index).plate.get("1.0","end-1c")
         ret_val = self.__process_save_target(save_nt,
                                              callback=lambda c:self.tabs.tab(index,text=c))
         if ( ret_val > 0 ):
@@ -283,7 +299,9 @@ class Memobook:
     def __save_note_as( self ):
         index = self.tabs.index("current")
         save_nt = self.tabs.getnoteref(index)
-        save_nt.body = self.tabs.getpageref(index).txt.get("1.0","end-1c")
+        save_nt.body = self.tabs.getpageref(index).dump()
+        if not save_nt.body:
+            return
         ret_targ = self.__process_save_target(save_nt,
                                               saveas=True,
                                               callback=lambda c:self.tabs.tab(index,text=c))

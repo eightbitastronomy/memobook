@@ -3,17 +3,20 @@
 import os
 import pathlib
 import sys
-from note import Note
 import parse
 import magic
-
 import sqlite3
+import PIL
+from note import Note, NoteMime
 
 
 
 class Binding():
     _src = None   # could file base directory, database connection
     _error = []
+    _text_hook = None
+    _img_hook = None
+    _pdf_hook = None
     def __init__(self,src=None):
         ### allow for init with or without source ###
         pass
@@ -60,6 +63,68 @@ class Binding():
     def set_active_base(self,d):
         pass
 
+
+
+
+
+def _mime_open(fname):
+    if not fname:
+        return None
+    try:
+        m = magic.open(magic.NONE)
+        m.load()
+        file_type = m.file(fname)
+    except Exception as e:
+        raise Exception(e)
+    else:
+        tmp_type = file_type.lower()
+        if tmp_type.find("text") >= 0:
+            return _targeted_text(fname)
+        if tmp_type.find("image") >= 0:
+            return _targeted_image(fname)
+        if tmp_type.find("pdf") >= 0:
+            return None
+        return None
+
+    
+def _targeted_text(name):
+    try:
+        with open(name,"r") as file_handle:
+            if file_handle is not None:
+                newnt = Note()
+                newnt.title = os.path.basename(name)
+                newnt.ID = name
+                newnt.body = ""
+                newnt.mime = NoteMime.TEXT
+            for l in file_handle.readlines():
+                newnt.body += l
+                #askopenfilenames does not leave the "10" char, and this next command removes its line feeds.#
+                #if curses.ascii.isctrl(newnt.text[len(newnt.text)-1]):
+                #    newnt.text = newnt.text[:len(newnt.text)-1]
+            file_handle.close()
+    except Exception as e:
+        raise Exception(e)
+        #print(e)
+        #self._error.append(e)
+    else:
+        newnt.parse()
+        return newnt
+
+    
+def _targeted_image(name):
+    try:
+        newnt = Note()
+        newnt.title = os.path.basename(name)
+        newnt.ID = name
+        #with PIL.Image.open(name) as img_src:
+        #    newnt.body = img_src
+        newnt.body = PIL.Image.open(name)
+        newnt.mime = NoteMime.IMAGE
+    except Exception as e:
+        raise Exception(e)
+    else:
+        return newnt
+    
 
 
 
@@ -346,21 +411,24 @@ class DatabaseBinding(Binding):
         
     def __process_file(self,f):
         try:
-            ##### the following doesn't solve the text-vs-other problem, and needs to be implemented via conf.xml otherwise:  ########
-            #if str(f).rfind(self.__ctrl["suff"]) < len(str(f))-len(self.__ctrl["suff"])-1 :
-            #    m = magic.open(magic.NONE)
-            #    m.load()
-            #    file_type = m.file(f)
-            #    if not ( (file_type.find("ASCII text")==0) or (file_type.find("UTF-8 Unicode text")==0) or (file_type.find("UTF-8 Unicode (with BOM) text")==0) ):
-            #        return
-            ############################################################################################################################
-            if str(f).rfind(self.__ctrl["suff"]) < len(str(f))-len(self.__ctrl["suff"])-1 :
-                return
-            handle = open(f,"r")
+            suffices = self.__ctrl["mime"]["Text"]["suff"]
+            if isinstance(suffices,str):
+                if str(f).rfind(suffices) < len(str(f))-len(suffices)-1 :
+                    return
+            else:
+                success = False
+                for suff in suffices:
+                    if str(f).rfind(suff) < len(str(f))-len(suffices)-1 :
+                        continue
+                    else:
+                        success = True
+                        break
+                if not success:
+                    return
             handle_text = ""
-            for l in handle.readlines():
-                handle_text += l
-            handle.close()
+            with open(f,"r") as handle:
+                for l in handle.readlines():
+                    handle_text += l
         except Exception as e:
             wrapper = Exception("<  " + str(f) + "  >  " + str(e))
             self._error.append(wrapper)
@@ -400,12 +468,6 @@ class DatabaseBinding(Binding):
         self.__cursor.execute('''select distinct mark from bookmarks''')
         mark_tuple = self.__cursor.fetchall()
         toc_list = []
-        #for mark in mark_tuple:
-        #    self.__cursor.execute('''select file from bookmarks where mark=?''',mark)
-        #    query_list = [ item[0] for item in self.__cursor.fetchall() ]
-        #    query_list.insert(0,mark[0])
-        #    toc_list.append( query_list )
-        #return toc_list
         for mt in mark_tuple:
             toc_list.append(mt[0])
         return toc_list
@@ -453,23 +515,11 @@ class DatabaseBinding(Binding):
         note_list = []
         for name in file_names:
             try:
-                file_handle = open(name,"r")
-                if file_handle is not None:
-                    newnt = Note()
-                    newnt.title =os.path.basename(name)
-                    newnt.ID = name
-                    newnt.body=""
-                    for l in file_handle.readlines():
-                        newnt.body += l
-                        #askopenfilenames does not leave the "10" char, and this next command removes its line feeds.#
-                        #if curses.ascii.isctrl(newnt.text[len(newnt.text)-1]):
-                        #    newnt.text = newnt.text[:len(newnt.text)-1]
-                    file_handle.close()
+                note_list.append( _mime_open(name) )
             except Exception as e:
                 self._error.append(e)
             else:
-                newnt.parse()
-                note_list.append(newnt)
+                continue
         return note_list
 
     def open_from_toc(self,ls):
@@ -486,6 +536,9 @@ class DatabaseBinding(Binding):
         if not ls:
             return None
         research_list = []
+        ### cannot query as where 'mark = ? and ? and ?' because DB is built with one mark per file.
+        ### hence, every record will fail the truth test. instead, must build lists of files for each mark,
+        ### then find the intersection of these file lists.
         for entry in ls:
             self.__cursor.execute('''select file from bookmarks where mark=?''',(entry,))
             buffer_list = []
@@ -503,6 +556,9 @@ class DatabaseBinding(Binding):
             e = Exception("set_save_as argument requires note object")
             self._error.append(e)
             return True
+        if nt.mime is not NoteMime.TEXT:
+            # silent fail: writing is not supported for images or pdfs
+            return False
         ### compare/update marks ###
         nt.tags = parse.parse(nt.body)
         self.__cursor.execute('''select rowid,mark from bookmarks where file=?''',(nt.ID,))
