@@ -1,17 +1,16 @@
-import enum
-import PIL
+'''Classes for a frontend tabbed notebook pane.
+   Requires backend file/data handling.'''
+
+
+
+
 import base64
 import io
-import tkinter
-import hscroll
 from tkinter import ttk
-from tkinter import messagebox
-from tkinter import scrolledtext
-from tkinter.font import *
 from PIL import Image as im
 from PIL import ImageTk
-from note import Note, NoteMime
-from page import TextPage, ImagePage, State
+from note import NoteMime
+from page import TextPage, ImagePage
 from config import TAB_SIZE
 
 
@@ -21,7 +20,8 @@ from config import TAB_SIZE
 
 
 class NotebookCloseTab(ttk.Notebook):
-    
+    '''Notebook with style modifications: a close button on each tab'''
+
     def __init__(self, *args, **kwargs):
         self.__set_style()
         kwargs["style"] = "NotebookCloseTab"
@@ -40,7 +40,7 @@ class NotebookCloseTab(ttk.Notebook):
     def on_close_release(self, event):
         if not self.instate(['pressed']):
             return
-        element =  self.identify(event.x, event.y)
+        element = self.identify(event.x, event.y)
         index = self.index("@%d,%d" % (event.x, event.y))
         if "close" in element and self._active == index:
             self.forget(index)
@@ -55,25 +55,29 @@ class NotebookCloseTab(ttk.Notebook):
         #style.configure('NotebookCloseTab.Tab',font=custom_font)
         ### use of simple font tuplets (family,size,weight), did produce an effect. ###
         #style.configure('NotebookCloseTab.Tab',font=("Comfortaa",10,tkinter.font.BOLD))
-        ### However, to achieve my goal, a style mapping did the trick: ### 
-        style.map('NotebookCloseTab.Tab',foreground=[('selected','#000000'),('!selected','#666666')])
+        ### However, to achieve my goal, a style mapping did the trick: ###
+        style.map('NotebookCloseTab.Tab',
+                  foreground=[('selected','#000000'),('!selected','#666666')])
         close_img = im.open(io.BytesIO(base64.b64decode('''
         R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
         d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
         5kEJADs=
         ''')))
-        close_tk_img = ImageTk.PhotoImage(close_img.resize((TAB_SIZE,TAB_SIZE)),name="close_img")
+        close_tk_img = ImageTk.PhotoImage(close_img.resize((TAB_SIZE,TAB_SIZE)),
+                                          name="close_img")
         closeactive_img = im.open(io.BytesIO(base64.b64decode('''
         R0lGODlhCAAIAMIEAAAAAP/SAP/bNNnZ2cbGxsbGxsbGxsbGxiH5BAEKAAQALAAA
         AAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU5kEJADs=
         ''')))
-        closeactive_tk_img = ImageTk.PhotoImage(closeactive_img.resize((TAB_SIZE,TAB_SIZE)),name="closeactive_img")
+        closeactive_tk_img = ImageTk.PhotoImage(closeactive_img.resize((TAB_SIZE,TAB_SIZE)),
+                                                name="closeactive_img")
         closepressed_img = im.open(io.BytesIO(base64.b64decode('''
         R0lGODlhCAAIAMIEAAAAAOUqKv9mZtnZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
         d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
         5kEJADs=
         ''')))
-        closepressed_tk_img = ImageTk.PhotoImage(closepressed_img.resize((TAB_SIZE,TAB_SIZE)),name="closepressed_img")
+        closepressed_tk_img = ImageTk.PhotoImage(closepressed_img.resize((TAB_SIZE,TAB_SIZE)),
+                                                 name="closepressed_img")
         self.images = (close_tk_img,closeactive_tk_img,closepressed_tk_img)
         style.element_create("close", "image", "close_img",
                              ("active", "pressed", "!disabled", "closepressed_img"),
@@ -100,37 +104,37 @@ class NotebookCloseTab(ttk.Notebook):
                 ]
             })
         ])
-    
-
-        
-        
 
 
-        
+
+
+
+
 class Book(NotebookCloseTab):
+    '''Notebook class for use with Memobook'''
 
     _l = -1             # tracks num of blank tabs
     _pgs = []           # the pages associated with tabs
     _save_hook = None   # save page callback fctn
     _close_hook = None  # close page callback fctn
     _ctrl = None        # Configuration pointer
-    
+
     def __init__(self,*args,**kwargs):
         NotebookCloseTab.__init__(self,*args,**kwargs)
         self.__blanktext(None)
         self.__ready(self._pgs[0])
-        
+
     def ruling(self,ctrl):
         self._ctrl = ctrl
-        
+
     def set_save_hook(self, sh):
         self._save_hook = sh
 
     def set_close_hook(self, ch):
         self._close_hook = ch
-        
+
     def __blanktext(self,event):
-        if (event==None) or (self.identify(event.x, event.y) == ""):
+        if (event is None) or (self.identify(event.x, event.y) == ""):
             self._l += 1
             newpg = TextPage(self)
             if self._ctrl:
@@ -144,12 +148,12 @@ class Book(NotebookCloseTab):
 
     def newpage(self,nt):
         if nt is None:
-            # no note? Error, or called by a double-click event (binding in memobook). Blank-text and return.
+            # Error, or called by a double-click event (binding in memobook). Blank-text and return.
             self.__blanktext(None)
             blank = self._pgs[len(self._pgs)-1]
             self.__ready(blank)
             return
-        if len(self._pgs)>0:
+        if self._pgs:
             # tabs are already present, focus on the last...
             curindex = self.index("current")
             curpg = self._pgs[curindex]
@@ -175,11 +179,10 @@ class Book(NotebookCloseTab):
         self.showchangestate(newpg)
         self.select( len(self._pgs)-1 )
 
-        
     def __ready(self,pg):
-        pg.plate.set_hook(lambda:self.showchangestate(pg))
+        pg.plate.set_hook(lambda: self.showchangestate(pg))
         pg.plate.focus_set()
-        
+
     def getnoteref(self,tabnum):
         if tabnum >= len(self._pgs):
             return None
@@ -200,7 +203,7 @@ class Book(NotebookCloseTab):
         tearoff = self._pgs.pop(tabnum)
         self.forget(tabnum)
         self.event_generate("<<NotebookTabClosed>>")
-        if len(self._pgs)==0:
+        if len(self._pgs) == 0:
             self._l = -1
         return tearoff.note
 
@@ -211,7 +214,7 @@ class Book(NotebookCloseTab):
     def showchangestate(self,page):
         for i in range(0,len(self._pgs)):
             if page == self._pgs[i]:
-                    break
+                break
         title = self.tab(i,"text").strip("*")
         if page.changed():
             self.tab(i,text="*"+title)
@@ -224,7 +227,8 @@ class Book(NotebookCloseTab):
         return self._pgs[i].changed()
 
     def marks(self):
-        # the alternative is to remove _mrks, strip newpage, and compile a list of marks here, on the fly, to be returned
+        # the alternative is to remove _mrks, strip newpage,
+        # and compile a list of marks here, on the fly, to be returned
         #return self._mrks
         marks_list = []
         for p in self._pgs:
@@ -234,19 +238,23 @@ class Book(NotebookCloseTab):
         return marks_list
 
     def togglewrap(self):
-        if len(self._pgs)==1:
+        if len(self._pgs) == 1:
             self.togglewrapall()
         else:
             self._pgs[self.index("current")].toggle_wrap()
-    
+
     def togglewrapall(self):
         if self._ctrl:
-            if self._ctrl["wrap"]=="word":
-                self._ctrl["wrap"]="none"
+            if self._ctrl["wrap"] == "word":
+                self._ctrl["wrap"] = "none"
             else:
-                self._ctrl["wrap"]="word"
+                self._ctrl["wrap"] = "word"
         for p in self._pgs:
             p.toggle_wrap(self._ctrl["wrap"])
+
+    def set_page_font(self,fam,sz,wt):
+        for p in self._pgs:
+            p.set_font(fam,sz,wt)
 
     def on_close_release(self, event):
         if not self.instate(['pressed']):

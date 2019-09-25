@@ -17,10 +17,14 @@ from tkinter import Button
 from tkinter import Radiobutton
 from tkinter import StringVar
 from tkinter import Listbox
+from tkinter import Label
 from tkinter import TclError
+from tkinter import font
+from tkinter.ttk import Combobox
+from tkinter.ttk import Style
 from book import Book
 import extconf
-from hscroll import ListboxH
+from hscroll import ListboxHV
 from binding import FileBinding, DatabaseBinding
 from note import NoteMime
 
@@ -40,16 +44,6 @@ class Heading(enum.Enum):
 
 
 
-    
-
-### despite using select, invoke, focus_set, event_generate, tk wouldn't set the OR radiobutton as default. ###
-### So this function is a workaround to force the issue.                                                    ###
-def _default_selection(var):
-    '''Workaround function to enforce radiobutton selection'''
-    var.set("or")
-
-
-    
     
 
 class Memobook:
@@ -91,7 +85,17 @@ class Memobook:
             self.root = kwargs["root"]
         else:
             self.root = Tk()
+            ### setting theme is inexplicably only affecting Book and the file-open dialogue,
+            ### nothing else. Setting theme of, e.g., self.menu also isn't working.
+            #self.root.style = Style()
+            #self.root.style.theme_use(self.ctrl["style"]["theme"])
             self.root.title("Memobook")
+        # adjust Tk's font sizes according to conf.xml "style" section.
+        # Positive value in conf.xml is an increase in size, negative a decrease
+        for name in font.names():
+            tk_font = font.nametofont(name)
+            new_size = tk_font["size"] - int(self.ctrl["style"]["font"]["size"])
+            tk_font.configure(size=new_size)
         # deal with hidden files for file dialogue by calling a dummy dialogue with nonsense options: (method taken from online forum)
         # (this is done here and not in binding class because it is a front-end matter, not a back-end one)
         try:
@@ -121,6 +125,11 @@ class Memobook:
         self.root.grid_rowconfigure(0,weight=1)
         self.offset = [ self.tabs.winfo_reqwidth()-int(self.ctrl["x"]),
                         self.tabs.winfo_reqheight()-int(self.ctrl["y"]) ]
+        #style = Style()
+        #style.configure(".",
+        #                font=(self.ctrl["style"]["font"]["family"],
+        #                      self.ctrl["style"]["font"]["size"],
+        #                      self.ctrl["style"]["font"]["weight"],))
 
 
     def __populate_menus( self ):
@@ -152,6 +161,9 @@ class Memobook:
                                       command=lambda: self.exit_all(None))
         mdict[Heading.MM].add_command(label="Add mark",
                                       command=lambda: self.__mark_dialogue(self.__mark_store))
+        mdict[Heading.ME].add_command(label="Font",
+                                      command=lambda: self.__font_dialogue())
+        mdict[Heading.ME].add_separator()
         mdict[Heading.ME].add_command(label="Toggle tab wrap",
                                       command=lambda: self.tabs.togglewrap())
         mdict[Heading.ME].add_checkbutton(label="Toggle global wrap",
@@ -176,45 +188,40 @@ class Memobook:
         self.root.bind("<Alt-m>",lambda e: self.__mark_dialogue(self.__mark_store))
 
 
-    def open_mark( self,callback ):  # open by mark
+    def open_mark( self, callback ):  # open by mark
+        ### despite using select, invoke, focus_set, event_generate,
+        ### tk wouldn't set the OR radiobutton as default.
+        ### So this function is a workaround to force the issue.
+        def default_selection(var):
+            var.set("or")
         toc = list(self.data.toc())
         toc.sort(key=lambda x: x[0])
         getter = Toplevel(self.root)
-        getter_list = ListboxH(getter,selectmode="multiple")
-        #getter_items = [ item[0] for item in toc ]
-        #for item in getter_items:
+        getter_list = ListboxHV(getter,selectmode="multiple")
         for item in toc:
             getter_list.insert(END,item)
-        getter_list.pack()
+        getter_list.pack(fill="both",expand="true")
         button_frame = Frame(getter)
         logic_variable = StringVar(None,"or")
         radiobutt_OR = Radiobutton(button_frame,
                                    text="OR",
                                    variable=logic_variable,
-                                   command=lambda: _default_selection(logic_variable),  #this is the only way I could get tk to give default selection
+                                   command=lambda: default_selection(logic_variable),  # get tk to give default selection
                                    value="or")
         radiobutt_AND = Radiobutton(button_frame,
                                     text="AND",
                                     variable=logic_variable,
                                     value="and")
-        #retbutt = Button(button_frame,
-        #                 text="Apply",
-        #                 command=lambda: callback(getter,
-        #                                          [ item for sublist in [ toc[j][1:] for j in getter_list.curselection()] for item in sublist],
-        #                                          logic_variable.get()),
-        #                 )
         retbutt = Button(button_frame,
                          text="Apply",
                          command=lambda: callback(getter,
-                                                  [ toc[j] for j in getter_list.curselection() ],
-                                                  logic_variable.get()),
-                         )
+                                                  [ toc[int(j)] for j in getter_list.curselection() ],
+                                                  logic_variable.get()))
         radiobutt_OR.pack(side="left")
         radiobutt_AND.pack(side="left")
         retbutt.pack(side="left")
         button_frame.pack(side="bottom")
         radiobutt_OR.invoke()
-
 
         
     def __open_mark_open( self,win,ls,logic ):  # callback function for open_mark
@@ -420,7 +427,86 @@ class Memobook:
         self.ctrl["x"] = str(self.root.winfo_width()-self.offset[0])
         self.ctrl["y"] = str(self.root.winfo_height()-self.offset[1] - 19)
         self.ctrl.print_config(str(self.ctrl["loc"]+os.sep+"conf.xml"))
-        self.root.destroy()    
+        self.root.destroy()
+
+
+    def __font_dialogue( self ):
+        def set_string_variable(var,val):
+            var.set(val)
+        def set_font(getter,fam,sz,wt):
+            self.ctrl["font"]["family"]=fam
+            self.ctrl["font"]["size"]=sz
+            self.ctrl["font"]["weight"]=wt
+            self.tabs.set_page_font(fam,sz,wt)
+            getter.destroy()
+        getter = Toplevel(self.root)
+        getter.title("Font selection")
+        family_str = StringVar(getter)
+        family_str.set(self.ctrl["font"]["family"])
+        size_str = StringVar(getter)
+        size_str.set(self.ctrl["font"]["size"])
+        weight_str = StringVar(getter)
+        weight_str.set(self.ctrl["font"]["weight"])
+        possible_fams = list(font.families(root=self.root))
+        possible_fams.sort(key=lambda x: x[0])
+        display_frame = Frame(getter)
+        instr_frame = Frame(display_frame)
+        instr_instr = Label(instr_frame,
+                            text="Please select a font:")
+        instr_examp = Label(instr_frame,
+                            text=family_str.get(),
+                            font=(family_str.get(),12,"normal"))
+        family_str.trace_add("write",
+                             lambda x,y,z: instr_examp.config(text=family_str.get(),
+                                                              font=(family_str.get(),
+                                                                    12,
+                                                                    weight_str.get())))
+        weight_str.trace_add("write",
+                             lambda x,y,z: instr_examp.config(text=family_str.get(),
+                                                              font=(family_str.get(),
+                                                                    12,
+                                                                    weight_str.get())))
+        label_frame = Frame(display_frame)
+        label_family = Label(label_frame,text="Family:")
+        label_size = Label(label_frame,text="Size:")
+        label_weight = Label(label_frame,text="Weight:")
+        choice_frame = Frame(display_frame)
+        choice_family = Combobox(choice_frame,
+                                 textvariable=family_str,
+                                 values=possible_fams)
+        choice_size = Combobox(choice_frame,
+                               textvariable=size_str,
+                               values=(6,8,10,12,14,16,18,20,24,28,32,48,64,72),
+                               postcommand=lambda: set_string_variable(size_str,
+                                                                       self.ctrl["font"]["size"]))
+        choice_weight = Combobox(choice_frame,
+                                 textvariable=weight_str,
+                                 values=("normal","bold","italic"))
+        finish_frame = Frame(getter)
+        finish_cancel = Button(finish_frame,
+                               text="Cancel",
+                               command=lambda: getter.destroy())
+        finish_apply = Button(finish_frame,
+                              text="Apply",
+                              command=lambda: set_font(getter,
+                                                       family_str.get(),
+                                                       size_str.get(),
+                                                       weight_str.get()))
+        instr_instr.pack(side="top",anchor="w")
+        instr_examp.pack(side="bottom",anchor="w")
+        instr_frame.pack()
+        label_family.pack(anchor="w")
+        label_size.pack(anchor="w")
+        label_weight.pack(anchor="w")
+        label_frame.pack(side="left")
+        choice_family.pack(anchor="w")
+        choice_size.pack(anchor="w")
+        choice_weight.pack(anchor="w")
+        choice_frame.pack(side="left")
+        display_frame.pack(side="top")
+        finish_cancel.pack(side="left")
+        finish_apply.pack(side="right")
+        finish_frame.pack(side="bottom")
 
 
     def __mark_dialogue( self,callback ):  # select mark to be added to note from list of current marks
@@ -445,7 +531,7 @@ class Memobook:
 
     def __open_pop( self, hook_remove, hook_add, hook_apply ):  # populate bookmark lists
         manager = Toplevel(self.root)
-        manager_list = ListboxH(manager,selectmode="multiple")
+        manager_list = ListboxHV(manager,selectmode="multiple")
         manager_items = self.ctrl["db"]["scan"]
         if isinstance(manager_items,str):
             manager_items = [ manager_items ]

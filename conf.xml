@@ -4,6 +4,7 @@
       <src>memotest1.db</src>
       <table>bookmarks</table>
       <scan>.</scan>
+      <scan>.</scan>
     </db>
     <mime>
       <Text>
@@ -47,10 +48,21 @@
         <suff>.xpm</suff>
       </Image>
     </mime>
+    <font>
+      <family>FreeSans</family>
+      <size>10</size>
+      <weight>normal</weight>
+    </font>
+    <style>
+      <theme>default</theme>
+      <font>
+        <size>0</size>
+      </font>
+    </style>
     <wrap>word</wrap>
     <save>.</save>
-    <loc>.</loc>
     <open>.</open>
+    <loc>.</loc>
     <x>774</x>
-    <y>336</y>
+    <y>387</y>
   </configuration>

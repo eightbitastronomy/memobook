@@ -28,6 +28,32 @@ class ListboxH(Listbox):
         return str(self.__frame)
 
 
+
+class ListboxHV(Listbox):
+    '''A ListBox with horizontal and vertical scrollbars'''
+    def __init__(self,master=None,**kwargs):
+        self.__frame = Frame(master)
+        self.__subframe = Frame(self.__frame)
+        Listbox.__init__(self, self.__subframe, **kwargs)
+        self.__scroll_h = Scrollbar(self.__frame,orient="horizontal")
+        self.__scroll_v = Scrollbar(self.__subframe,orient="vertical")
+        self.config(self,xscrollcommand=self.__scroll_h.set,yscrollcommand=self.__scroll_v.set)
+        self.__scroll_h.config(command=self.xview)
+        self.__scroll_v.config(command=self.yview)
+        self.__scroll_v.pack(side="right",fill="y")
+        self.__scroll_h.pack(side="bottom",fill="x")
+        self.pack(side="left",fill="both",expand="true")
+        self.__subframe.pack(side="top",fill="both",expand="true")
+        list_meths = vars(Listbox).keys()
+        methods = vars(Pack).keys() | vars(Grid).keys() | vars(Place).keys()
+        methods = methods.difference(list_meths)
+        for m in methods:
+            if m[0] != '_' and m != 'config' and m != 'configure':
+                setattr(self, m, getattr(self.__frame, m))
+    def __str__(self):
+        return str(self.__frame)
+
+
     
 class ScrolledTextH(st.ScrolledText):
     '''A ScrolledText with a horizontal scrollbar'''

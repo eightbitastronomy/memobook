@@ -2,9 +2,8 @@ memobook, author: eightbitastronomy
 
 A notepad/texteditor derivative for people who don't want to remember everything ever.
 
- -   Written in Python 3; requires tkinter and sqlite3 libraries.
+ -   Written in Python 3; requires tkinter and sqlite3 libraries. Requires pillow (PIL) version 6+ (I think) -- must have ImageTk.
  -   Class Memobook is the application, but pad.sh is a short script to launch it. Alternatively, launch it via pad.py.
- -   Class CustomNotebook in notebook.py is not original code, but was copied from a public forum help thread. I imagine that this portion of the code is therefore not covered under any license of mine.
 
 Usage:
 

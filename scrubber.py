@@ -1,8 +1,14 @@
+'''XML scrubbing utilities / classes'''
+
+
 import enum
 
 
 
 class Stack:
+    '''A bare-bones stack implementation'''
+    ### This stack is, at the moment, over-kill. ScrubberXML really only needs a counter.
+    ### However, in the future I may expand ScrubberXML into something that really does need a stack.
     def __init__(self,depth):
         self.__depth = depth
         self.__list = []

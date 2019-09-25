@@ -40,6 +40,8 @@ class Page:
         pass
     def toggle_wrap(self,wr=None):
         pass
+    def set_font(self,fam,sz,wt):
+        pass
     def append(self,mtrl):
         ### function for adding marks. Can't be implemented in ImagePage until
         ### a system for storing image-mark information is developed
@@ -98,6 +100,8 @@ class TextPage(Page):
                 self._wrap="word"
                 self.plate.hide_h()
         self.plate.configure(wrap=self._wrap)
+    def set_font(self,fam,sz,wt):
+        self.plate.configure(font=(str(fam),int(sz),str(wt)))
     def append(self,mtrl):
         self.plate.insert(tkinter.END,mtrl)
     def dump(self):

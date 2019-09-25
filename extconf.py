@@ -126,8 +126,16 @@ def _traverse_dict(nd,parent):
 
 def _traverse_conf(doc,nd,parent):
     if len(nd.childNodes)==1:
-        return str(nd.childNodes[0].data)
+        # either we have data, or we have a tag-within-a-tag
+        if nd.childNodes[0].nodeType == nd.childNodes[0].TEXT_NODE:
+            return str(nd.childNodes[0].data)
+        else:
+            holder = Configuration(doc,nd,parent)
+            holder.add_data_from_xml(nd.childNodes[0].tagName,_traverse_conf(doc,nd.childNodes[0],nd))
+            return holder
     else:
+        # multiple children, we must skip any text (scrubber.py should have removed any)
+        # this is a limitation: this extconf construct can't handle a tag w/ both data + children
         holder = Configuration(doc,nd,parent)
         for child in nd.childNodes:
             if child.nodeType is child.TEXT_NODE:
