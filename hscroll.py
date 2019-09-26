@@ -99,7 +99,10 @@ class TextCompound(ScrolledTextH):
         try:
             cmd_result = self.tk.call(compound_cmd)
         except TclError as tcle:
-            if str(tcle) == "nothing to undo":
+            tcle_descr = str(tcle)
+            if tcle_descr == "nothing to undo":
+                pass
+            elif tcle_descr == '''text doesn't contain any characters tagged with "sel"''':
                 pass
             else:
                 raise tcle
