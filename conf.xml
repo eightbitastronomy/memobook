@@ -1,9 +1,8 @@
 <?xml version="1.0" ?>
   <configuration>
     <db>
-      <src>memotest1.db</src>
+      <src>archive.db</src>
       <table>bookmarks</table>
-      <scan>.</scan>
       <scan>.</scan>
     </db>
     <mime>
@@ -60,8 +59,8 @@
       </font>
     </style>
     <wrap>word</wrap>
-    <save>.</save>
     <open>.</open>
+    <save>.</save>
     <loc>.</loc>
     <x>774</x>
     <y>387</y>

@@ -182,27 +182,13 @@ class FileBinding(Binding):
             file_names = [ n for n in nl ]
         note_list = []
         for name in file_names:
-            #print(magic.from_file(name))
             try:
-                file_handle = open(name,"r")
-                if file_handle is not None:
-                    newnt = Note()
-                    newnt.title =os.path.basename(name)
-                    newnt.ID = name
-                    newnt.body=""
-                    for l in file_handle.readlines():
-                        newnt.body += l
-                        #askopenfilenames does not leave the "10" char, and this next command removes its line feeds.#
-                        #if curses.ascii.isctrl(newnt.text[len(newnt.text)-1]):
-                        #    newnt.text = newnt.text[:len(newnt.text)-1]
-                    file_handle.close()
+                note_list.append( _mime_open(name) )
             except Exception as e:
                 self._error.append(e)
             else:
-                newnt.parse()
-                note_list.append(newnt)
+                continue
         return note_list
-
 
     def open_from_toc(self,ls):
         if not ls:
@@ -224,13 +210,14 @@ class FileBinding(Binding):
             e = Exception("set_save_as argument requires note object")
             self._error.append(e)
             return True
+        if nt.mime is not NoteMime.TEXT:
+            # silent fail: writing is not supported for images or pdfs
+            return False
         try:
             handle = open(nt.ID,"w")
             handle.write(nt.body)
             handle.close()
         except Exception as e:
-            #print("File could not be written due to error: " + str(e) )
-            #return None
             self._error.append(e)
             return True
         else:
@@ -238,21 +225,28 @@ class FileBinding(Binding):
 
     def __process_file(self,f):
         try:
-            m = magic.open(magic.NONE)
-            m.load()
-            ### the following needs to be moved to conf.xml or something :  ###
-            file_type = m.file(f)
-            if not ( (file_type.find("ASCII text")==0) or (file_type.find("UTF-8 Unicode text")==0) or (file_type.find("UTF-8 Unicode (with BOM) text")==0) ):
-                #print("rejecting " + str(f))
-                return None
-            handle = open(f,"r")
+            suffices = self.__ctrl["mime"]["Text"]["suff"]
+            if isinstance(suffices,str):
+                if str(f).rfind(suffices) < len(str(f))-len(suffices)-1 :
+                    return
+            else:
+                success = False
+                for suff in suffices:
+                    if str(f).rfind(suff) < len(str(f))-len(suffices)-1 :
+                        continue
+                    else:
+                        success = True
+                        break
+                if not success:
+                    return
             handle_text = ""
-            for l in handle.readlines():
-                handle_text += l
-            handle.close()
+            with open(f,"r") as handle:
+                for l in handle.readlines():
+                    handle_text += l
         except Exception as e:
-            self._error.append(e)
-            return None
+            wrapper = Exception("<  " + str(f) + "  >  " + str(e))
+            self._error.append(wrapper)
+            return
         return parse.parse(handle_text)
         
     def __delve(self,directory):
@@ -297,14 +291,6 @@ class FileBinding(Binding):
 
     def clear(self):
         pass
-        
-    #def toc(self):
-    #    ret_list = []
-    #    for key,vals in self.__toc.items():
-    #        tmp_list = [ item for item in vals ]
-    #        tmp_list.insert(0,key)
-    #        ret_list.append(tmp_list)
-    #    return ret_list
 
     def toc(self):
         return self.__toc.keys()
