@@ -31,4 +31,4 @@ Future tasks:
  -   better handling of what is a text file and what is not.
  -   add pdf read-only capabilities.
  -   resolve malfunction of global Tk theme changes.
- -   ctrl-x for text cutting results in a fatal exception/error when no text has been highlighted. Must capture this exception and discard.
+
