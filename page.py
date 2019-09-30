@@ -103,7 +103,8 @@ class TextPage(Page):
     def set_font(self,fam,sz,wt):
         self.plate.configure(font=(str(fam),int(sz),str(wt)))
     def append(self,mtrl):
-        self.plate.insert(tkinter.END,mtrl)
+        for item in mtrl:
+            self.plate.insert(tkinter.END," @@" + str(item))
     def dump(self):
         return self.plate.get("1.0","end-1c")
 
@@ -124,4 +125,8 @@ class ImagePage(Page):
         return False
     def dump(self):
         return None
-    ### MUST IMPLEMENT append, which requires mark storage for images!
+    def append(self,mtrl):
+        ### 'append' for Image is actually a 'replace' action
+        self.note.tags = note.Tag()
+        for item in mtrl:
+            self.note.tags.append(str(item))

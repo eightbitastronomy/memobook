@@ -120,9 +120,13 @@ class Book(NotebookCloseTab):
     _ctrl = None        # Configuration pointer
 
     def __init__(self,*args,**kwargs):
+        if "ruling" in kwargs:
+            self._ctrl = kwargs["ruling"]
+            del kwargs["ruling"]
         NotebookCloseTab.__init__(self,*args,**kwargs)
-        self.__blanktext(None)
-        self.__ready(self._pgs[0])
+        if self._ctrl:
+            self.__blanktext(None)
+            self.__ready(self._pgs[0])
 
     def ruling(self,ctrl):
         self._ctrl = ctrl
@@ -137,6 +141,7 @@ class Book(NotebookCloseTab):
         if (event is None) or (self.identify(event.x, event.y) == ""):
             self._l += 1
             newpg = TextPage(self)
+            newpg.set_font(self._ctrl["font"]["family"],self._ctrl["font"]["size"],self._ctrl["font"]["weight"])
             if self._ctrl:
                 newpg.toggle_wrap(self._ctrl["wrap"])
             self._pgs.append( newpg )
@@ -167,6 +172,7 @@ class Book(NotebookCloseTab):
         newpg = None
         if nt.mime == NoteMime.TEXT:
             newpg = TextPage(self,note=nt)
+            newpg.set_font(self._ctrl["font"]["family"],self._ctrl["font"]["size"],self._ctrl["font"]["weight"])
             if self._ctrl:
                 newpg.toggle_wrap(self._ctrl["wrap"])
         if nt.mime == NoteMime.IMAGE:

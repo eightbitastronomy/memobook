@@ -18,16 +18,17 @@ from tkinter import Radiobutton
 from tkinter import StringVar
 from tkinter import Listbox
 from tkinter import Label
+from tkinter import Entry
 from tkinter import TclError
 from tkinter import font
 from tkinter.ttk import Combobox
 from tkinter.ttk import Style
 from book import Book
 import extconf
+import parse
 from hscroll import ListboxHV
 from binding import FileBinding, DatabaseBinding
 from note import NoteMime
-
 
 
 
@@ -39,9 +40,8 @@ class Heading(enum.Enum):
 
     MF = 'File'
     ME = 'Edit'
-    MM = 'Mark'
     MS = 'Sources'
-
+    MH = 'Help'
 
 
     
@@ -109,8 +109,8 @@ class Memobook:
         if "tabs" in kwargs.keys():
             self.tabs = kwargs["tabs"]
         else:
-            self.tabs = Book(self.root,width=self.ctrl["x"],height=self.ctrl["y"])
-            self.tabs.ruling(self.ctrl)
+            self.tabs = Book(self.root,ruling=self.ctrl,width=self.ctrl["x"],height=self.ctrl["y"])
+            #self.tabs.ruling(self.ctrl)  #if ruling is not specified in constructor call, it must be done so here
             self.tabs.set_save_hook(lambda:self.__save_note())
             self.tabs.set_close_hook(lambda:self.__close_page())
             self.tabs.bind("<Double-Button-1>",lambda e: self.tabs.newpage(None))
@@ -135,8 +135,8 @@ class Memobook:
     def __populate_menus( self ):
         mdict = { Heading.MF:Menu(self.menu,tearoff=0),
                   Heading.ME:Menu(self.menu,tearoff=0),
-                  Heading.MM:Menu(self.menu,tearoff=0),
-                  Heading.MS:Menu(self.menu,tearoff=0) }
+                  Heading.MS:Menu(self.menu,tearoff=0),
+                  Heading.MH:Menu(self.menu,tearoff=0) }
         for k in mdict:
             self.menu.add_cascade(label=k.value,menu=mdict[k])
         mdict[Heading.MF].add_command(label="New",
@@ -159,8 +159,9 @@ class Memobook:
         mdict[Heading.MF].add_separator()
         mdict[Heading.MF].add_command(label="Quit",
                                       command=lambda: self.exit_all(None))
-        mdict[Heading.MM].add_command(label="Add mark",
+        mdict[Heading.ME].add_command(label="Insert mark",
                                       command=lambda: self.__mark_dialogue(self.__mark_store))
+        mdict[Heading.ME].add_separator()
         mdict[Heading.ME].add_command(label="Font",
                                       command=lambda: self.__font_dialogue())
         mdict[Heading.ME].add_separator()
@@ -177,6 +178,8 @@ class Memobook:
                                       command=lambda: self.__open_pop(self.__open_pop_remove,
                                                                      self.__open_pop_add,
                                                                      self.__open_pop_apply))
+        mdict[Heading.MH].add_command(label="About",
+                                      command=lambda: self.__publication_info())
 
 
     def __set_bindings( self ):  # binding functions to keystrokes
@@ -510,22 +513,94 @@ class Memobook:
 
 
     def __mark_dialogue( self,callback ):  # select mark to be added to note from list of current marks
+        def add_to_dest(listbox,listitems):
+            for item in listitems:
+                listbox.insert(END,item)
+        def rem_from_dest(listbox):
+            orderlist = list(listbox.curselection())
+            orderlist.sort(reverse=True)
+            for index in orderlist:
+                listbox.delete(index)
+        def process_dest(win,listbox):
+            destlist = listbox.get(0,END)
+            self.__mark_store(win,
+                              [destlist[j] for j in map(int,listbox.curselection())])
         getter = Toplevel(self.root)
-        getter_list = Listbox(getter,selectmode="multiple")
-        getter_items = self.tabs.marks()
-        getter_items.sort()
-        for item in getter_items:
-            getter_list.insert(END,item)
-        getter_list.pack()
-        retbutt = Button(getter,
-                         text="Apply",
-                         command=lambda: callback(getter,[getter_items[j] for j in getter_list.curselection()]) )
-        retbutt.pack()
+        if self.tabs.getnoteref(self.tabs.index("current")).mime == NoteMime.TEXT:
+            getter_list = ListboxHV(getter,selectmode="multiple")
+            getter_items = self.tabs.marks()
+            getter_items.sort()
+            for item in getter_items:
+                getter_list.insert(END,item)
+            getter_list.pack()
+            retbutt = Button(getter,
+                             text="Apply",
+                             command=lambda: callback(getter,
+                                                      [getter_items[j] for j in getter_list.curselection()]) )
+            retbutt.pack()
+        else:
+            top_frame = Frame(getter)
+            top_left_frame = Frame(top_frame)
+            top_left_label = Label(top_left_frame,
+                                   text="Marks from open notes:")
+            top_left_getter = ListboxHV(top_left_frame,
+                                        selectmode="multiple")
+            getter_items = self.tabs.marks()
+            getter_items.sort()
+            for item in getter_items:
+                top_left_getter.insert(END,item)
+            top_right_frame = Frame(top_frame)
+            top_right_label = Label(top_right_frame,
+                                    text="Marks to be stored:")
+            top_right_dest = ListboxHV(top_right_frame,
+                                       selectmode="multiple")
+            top_cent_frame = Frame(top_frame)
+            top_cent_add = Button(top_cent_frame,
+                                  text="→",
+                                  command=lambda:add_to_dest(top_right_dest,
+                                                             [getter_items[j] for j in top_left_getter.curselection()]))
+            top_cent_remove = Button(top_cent_frame,
+                                     text="X",
+                                     command=lambda:rem_from_dest(top_right_dest))
+            bottom_frame = Frame(getter)
+            bottom_middle_frame = Frame(bottom_frame)
+            bottom_middle_label = Label(bottom_middle_frame,
+                                 text="Additional marks:")
+            bottom_middle_enter = Entry(bottom_middle_frame,
+                                        width=24)
+            bottom_middle_add = Button(bottom_middle_frame,
+                                text="↑",
+                                command=lambda:add_to_dest(top_right_dest,
+                                                           parse.split_by_unknown(bottom_middle_enter.get())))
+            bottom_bottom_frame = Frame(bottom_frame)
+            bottom_bottom_apply = Button(bottom_bottom_frame,
+                                  text="Apply",
+                                         command=lambda:process_dest(getter,top_right_dest))
+            bottom_bottom_cancel = Button(bottom_bottom_frame,
+                                          text="Cancel",
+                                          command=lambda: getter.destroy())
+            top_left_label.pack(side="top",anchor="n")
+            top_left_getter.pack(side="bottom",anchor="w")
+            top_left_frame.pack(side="left")
+            top_cent_remove.pack(side="bottom")
+            top_cent_add.pack(side="bottom")
+            top_cent_frame.pack(side="left")
+            top_right_label.pack(side="top",anchor="n")
+            top_right_dest.pack(side="left",anchor="w")
+            top_right_frame.pack(side="left")
+            top_frame.pack(side="top")
+            bottom_bottom_apply.pack(side="left")
+            bottom_bottom_cancel.pack(side="right")
+            bottom_bottom_frame.pack(side="bottom")
+            bottom_middle_label.pack(side="left",anchor="w")
+            bottom_middle_enter.pack(side="left",anchor="w",fill="x",expand="true")
+            bottom_middle_add.pack(side="right",anchor="w")
+            bottom_middle_frame.pack(side="bottom",anchor="w")
+            bottom_frame.pack(side="bottom")
     
     
     def __mark_store( self,win,ls ):  # callback function for mark_dialogue
-        for t in ls:
-            self.tabs.writetocurrent(" @@" + str(t))
+        self.tabs.writetocurrent(ls)
         win.destroy()
 
 
@@ -596,3 +671,5 @@ class Memobook:
         win.destroy()
 
 
+    def __publication_info(self):
+        pass
