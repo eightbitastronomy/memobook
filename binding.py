@@ -544,7 +544,6 @@ class DatabaseBinding(Binding):
             return True
         if nt.mime is not NoteMime.TEXT:
             # silent fail: writing is not supported for images or pdfs
-            ### here i must implement xml tag rewrite for any changes in marks to the image/pdf/whatever ###
             return False
         ### compare/update marks ###
         nt.tags = parse.parse(nt.body)
