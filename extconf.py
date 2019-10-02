@@ -14,7 +14,11 @@ class Configuration(dict):
         self.__doc = doc
         self.__src = nd
         self.__parent = parent
+        self.__attr = None
 
+    def getdoc(self):
+        return self.__doc
+    
     def getnode(self):
         return self.__src
 
@@ -31,7 +35,11 @@ class Configuration(dict):
         if key in dict.keys(self):
             buff_val = dict.__getitem__(self,key)
             btype = type(buff_val)
-            if btype==tuple:
+            if btype==Configuration:
+                buff_list = [ buff_val ]
+                buff_list.append(val)
+                dict.__setitem__(self,key,tuple(buff_list))
+            elif btype==tuple:
                 buff_list = list(buff_val)
                 buff_list.append(val)
                 dict.__setitem__(self,key,tuple(buff_list))
@@ -52,12 +60,18 @@ class Configuration(dict):
                     target_nodes.append(c)
         for target in target_nodes:
             self.__src.removeChild(target)
-        if (type(val) is tuple) or (type(val) is list):
+        if isinstance(val,Configuration):
+            self.__src.appendChild(val.getnode())
+            dict.__setitem__(self,key,val)
+        elif isinstance(val,tuple) or isinstance(val,list):
             for v in val:
-                newn = self.__doc.createElement(key)
-                newt = self.__doc.createTextNode(str(v))
-                newn.appendChild(newt)
-                self.__src.appendChild(newn)
+                if isinstance(v,Configuration):
+                    self.__src.appendChild(v.getnode())
+                else:
+                    newn = self.__doc.createElement(key)
+                    newt = self.__doc.createTextNode(str(v))
+                    newn.appendChild(newt)
+                    self.__src.appendChild(newn)
             dict.__setitem__(self,key,tuple(val))
         else:
             newn = self.__doc.createElement(key)
@@ -65,6 +79,24 @@ class Configuration(dict):
             newn.appendChild(newt)
             self.__src.appendChild(newn)
             dict.__setitem__(self,key,val)
+
+    def get_attr(self,key):
+        attr_dict = dict(self.__attr.items())
+        if key in attr_dict.keys():
+            return attr_dict[key]
+        else:
+            return None
+
+    def get_attr_keys(self):
+        if self.__attr:
+            return self.__attr.items()
+        return None
+    
+    def set_attr(self,key,val):
+        self.__src.setAttribute(key,val)
+
+    def add_attr(self,attr):
+        self.__attr = attr
 
     def xml(self):
         return self.__doc.toprettyxml()
@@ -80,9 +112,62 @@ class Configuration(dict):
         f.close()
 
 
+
+def fill_configuration(config,tag,members,attributes=None):
+    '''An external constructor for Configuration: Arguments are...
+       config => the Configuration object initialized at least with a document
+       tag => the tag under which config will be access when presumably it is inserted into a subsuming Configuration
+       members => a dictionary of keys,values for whatever data config represents
+       attributes => optional, a dictionary of keys,values of config's attributes'''
+    doc = config.getdoc()
+    config.setnode(doc.createElement(tag))
+    for key in members:
+        child = None
+        if isinstance(members[key],str):
+            child = doc.createElement(key)
+            datum = doc.createTextNode(members[key])
+            child.appendChild(datum)
+        elif isinstance(members[key],list) or isinstance(members[key],tuple):
+            child = doc.createElement(key)
+            for listitem in members[key]:
+                if isinstance(listitem,str):
+                    datum = doc.createTextNode(listitem)
+                    child.appendChild(datum)
+                else: # configuration
+                    child.appendChild(listitem.getnode())
+                    listitem.setparent(child)
+        else:
+            child = listitem.getnode()
+            listitem.setparent(newnode)
+        config.getnode().appendChild(child)
+        config[key] = members[key]
+    if attributes:
+        for key in attributes:
+            config.add_attr(doc.createAttribute(key))
+            config.set_attr(key,attributes[key])
+    return
+
+
+
+def attach_configuration(destconf,desttag,srcconf):
+    '''Tool for attaching a "filled" Configuration to both a document and to a subsuming Configuration.
+       Caution: desttag must match the tag-argument with which srcconf was "filled"'''
+    if isinstance(destconf[desttag],list) or isinstance(destconf[desttag],tuple):
+        parent = destconf[desttag][0].getparent()
+        destlist = list(destconf[desttag])
+        destlist.append(srcconf)
+        destconf[desttag] = tuple(destlist)
+    else:
+        parent = destconf[desttag].getparent()
+        destlist = [ destconf[desttag], srcconf ]
+        destconf[desttag] = tuple(destlist)
+    srcconf.setparent(parent)
+    parent.appendChild(srcconf.getnode())
+
         
 
 def tree(doc,nd=None,mrk=""):
+    '''Diagnostic tool for printing the xml doc'''
     if nd is None:
         nd = doc
     #print("(",len(nd.childNodes),")")
@@ -102,6 +187,7 @@ def tree(doc,nd=None,mrk=""):
         
         
 def _traverse_dict(nd,parent):
+    '''Traverse dictionary test function. No longer is updated; use _traverse_conf'''
     if len(nd.childNodes)==1:
         return str(nd.childNodes[0].data)
     else:
@@ -131,12 +217,14 @@ def _traverse_conf(doc,nd,parent):
             return str(nd.childNodes[0].data)
         else:
             holder = Configuration(doc,nd,parent)
+            holder.add_attr(nd.attributes)
             holder.add_data_from_xml(nd.childNodes[0].tagName,_traverse_conf(doc,nd.childNodes[0],nd))
             return holder
     else:
         # multiple children, we must skip any text (scrubber.py should have removed any)
         # this is a limitation: this extconf construct can't handle a tag w/ both data + children
         holder = Configuration(doc,nd,parent)
+        holder.add_attr(nd.attributes)
         for child in nd.childNodes:
             if child.nodeType is child.TEXT_NODE:
                 continue
