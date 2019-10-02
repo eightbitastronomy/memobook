@@ -72,6 +72,7 @@ class TextPage(Page):
             self.plate.insert(tkinter.END,self.note.body)
         else:
             self.note = note.Note()
+            self.note.mime = note.NoteMime.TEXT
         self.plate.pack(fill='both',expand=tkinter.YES)
     def blank(self):
         if self._state == State.BLNK:
