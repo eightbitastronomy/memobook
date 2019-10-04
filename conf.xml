@@ -48,7 +48,7 @@
       </Image>
     </mime>
     <font>
-      <family>FreeSans</family>
+      <family>Cantarell</family>
       <size>10</size>
       <weight>normal</weight>
     </font>
@@ -59,9 +59,10 @@
       </font>
     </style>
     <wrap>word</wrap>
-    <open>.</open>
     <save>.</save>
     <loc>.</loc>
-    <x>774</x>
-    <y>387</y>
+    <index>.</index>
+    <open>.</open>
+    <x>717</x>
+    <y>276</y>
   </configuration>

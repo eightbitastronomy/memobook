@@ -7,6 +7,7 @@ import parse
 import magic
 import sqlite3
 import PIL
+import extconf
 from note import Note, NoteMime
 
 
@@ -62,12 +63,12 @@ class Binding():
         pass
     def set_active_base(self,d):
         pass
+    def set_index(self,dex):
+        pass
 
 
 
-
-
-def _mime_open(fname):
+def _mime_open(fname,index=None):
     if not fname:
         return None
     try:
@@ -81,7 +82,7 @@ def _mime_open(fname):
         if tmp_type.find("text") >= 0:
             return _targeted_text(fname)
         if tmp_type.find("image") >= 0:
-            return _targeted_image(fname)
+            return _targeted_image(fname,index)
         if tmp_type.find("pdf") >= 0:
             return None
         return None
@@ -111,7 +112,7 @@ def _targeted_text(name):
         return newnt
 
     
-def _targeted_image(name):
+def _targeted_image(name,index=None):
     try:
         newnt = Note()
         newnt.title = os.path.basename(name)
@@ -120,6 +121,23 @@ def _targeted_image(name):
         #    newnt.body = img_src
         newnt.body = PIL.Image.open(name)
         newnt.mime = NoteMime.IMAGE
+        if index:
+            target = None
+            tmp_files = index["file"]
+            if isinstance(tmp_files,extconf.Configuration):
+                if tmp_files["loc"] == name:
+                    target = tmp_files
+            else:
+                for f in tmp_files:
+                    if f["loc"] == name:
+                        target = f
+                        break
+            if target:
+                tmp_marks = target["mark"]
+                if isinstance(tmp_marks,str):
+                    newnt.tags = [ tmp_marks ]
+                else:
+                    newnt.tags = list(tmp_marks)
     except Exception as e:
         raise Exception(e)
     else:
@@ -340,6 +358,7 @@ class DatabaseBinding(Binding):
     __base_dir = None
     __ctrl = None
     __cursor = None
+    __dex = None
     
     def __init__(self,ctrl):
         self.__ctrl = ctrl
@@ -369,7 +388,7 @@ class DatabaseBinding(Binding):
             self.__cursor = self._src.cursor()
             self.__cursor.execute('''select * from sqlite_master where type="table" and name="bookmarks"''',)
             if self.__cursor.fetchone() is None:
-                self.__cursor.execute('''create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL);''')
+                self.__cursor.execute('''create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);''')
                 self._src.commit()
         except Exception as e:
             self._error.append(e)
@@ -380,7 +399,37 @@ class DatabaseBinding(Binding):
         else:
             return None
 
+    def set_index(self,dex):
+        self.__dex = dex
+        
+    def __load_index(self):
+        files = self.__dex["file"]
+        for f in files:
+            loc = f["loc"]
+            if not os.access(loc,os.R_OK):
+                self.clear(("file",loc))
+                extconf.remove_configuration(self.__dex,"file",f)
+            else:
+                tmp_marks = f["mark"]
+                if isinstance(tmp_marks,str):
+                    marks = [ tmp_marks ]
+                elif isinstance(tmp_marks,tuple) or isinstance(tmp_marks,list):
+                    marks = f["mark"]
+                else:
+                    # is a Configuration. Undecided course of action.
+                    pass
+                for mark in marks:
+                    self.__cursor.execute('''SELECT mark,file FROM bookmarks WHERE mark=? AND file=? AND type=?''',(mark,loc,f.get_attr("type")))
+                    hit_list = self.__cursor.fetchall()
+                    if hit_list:
+                        continue
+                    else:
+                        self.__cursor.execute('''INSERT INTO bookmarks(mark,file,type) VALUES(?,?,?)''',(str(mark),str(loc),f.get_attr("type")))
+        self._src.commit()
+        
     def populate(self):
+        if not self._src:
+            return
         if isinstance(self.__ctrl["db"]["scan"],str):
             self.__scan_list = [ self.__ctrl["db"]["scan"] ]
         else:
@@ -394,6 +443,13 @@ class DatabaseBinding(Binding):
                 for error in self._error:
                     print(error)
                 self._error = []
+        if self.__dex:
+            self.__load_index()
+            if self._error:
+                for error in self._error:
+                    print(error)
+                self._error = []
+
         
     def __process_file(self,f):
         try:
@@ -421,12 +477,12 @@ class DatabaseBinding(Binding):
             return
         marks = parse.parse(handle_text)
         for m in marks:
-            self.__cursor.execute('''SELECT mark,file FROM bookmarks WHERE mark=? AND file=?''',(m,str(f)))
+            self.__cursor.execute('''SELECT mark,file FROM bookmarks WHERE mark=? AND file=? AND type=?''',(m,str(f),NoteMime.TEXT.value))
             hit_list = self.__cursor.fetchall()
             if hit_list:
                 continue
             else:
-                self.__cursor.execute('''INSERT INTO bookmarks(mark,file) VALUES(?,?)''',(m,str(f)))
+                self.__cursor.execute('''INSERT INTO bookmarks(mark,file,type) VALUES(?,?,?)''',(m,str(f),NoteMime.TEXT.value))
         return
         
     def __delve(self,directory):
@@ -501,7 +557,7 @@ class DatabaseBinding(Binding):
         note_list = []
         for name in file_names:
             try:
-                note_list.append( _mime_open(name) )
+                note_list.append( _mime_open(name,self.__dex) )
             except Exception as e:
                 self._error.append(e)
             else:
@@ -556,7 +612,7 @@ class DatabaseBinding(Binding):
         self._src.commit()
         for tag in nt.tags:
             if not (tag in [ item[1] for item in db_hits ]):
-                self.__cursor.execute('''insert into bookmarks (mark,file) values (?,?)''',(tag,nt.ID,))
+                self.__cursor.execute('''insert into bookmarks (mark,file,type) values (?,?,?)''',(tag,nt.ID,nt.mime.value))
         self._src.commit()
         try:
             handle = open(nt.ID,"w")
@@ -571,6 +627,28 @@ class DatabaseBinding(Binding):
     def close_note(self):
         ### if applicable, close a note; could mean clearing some pointers ###
         pass
+
+    def update(self,nt,marks):
+        if (not nt.tags) and (not marks):
+                return
+        nt.tags = marks
+        # find the file in the index ( update or create it )
+        target = None
+        tmp_files = self.__dex["file"]
+        if isinstance(tmp_files,extconf.Configuration):
+            if tmp_files["loc"] == nt.ID:
+                target = tmp_files
+        else:
+            for f in tmp_files:
+                if f["loc"] == nt.ID:
+                    target = f
+                    break
+        if target:
+            target["mark"] = marks
+        else:
+            newc = extconf.Configuration(self.__dex.getdoc())
+            extconf.fill_configuration(newc,"file",members={"loc":nt.ID,"mark":[item for item in nt.tags]},attributes={"type":nt.mime.value})
+            extconf.attach_configuration(self.__dex,"file",newc)
 
     def __del__(self):
         if self._src:

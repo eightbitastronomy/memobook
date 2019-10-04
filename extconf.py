@@ -127,19 +127,24 @@ def fill_configuration(config,tag,members,attributes=None):
             child = doc.createElement(key)
             datum = doc.createTextNode(members[key])
             child.appendChild(datum)
+            config.getnode().appendChild(child) #
         elif isinstance(members[key],list) or isinstance(members[key],tuple):
-            child = doc.createElement(key)
             for listitem in members[key]:
                 if isinstance(listitem,str):
+                    child = doc.createElement(key) #
                     datum = doc.createTextNode(listitem)
                     child.appendChild(datum)
-                else: # configuration
+                else:
+                    # it's a configuration
+                    child = doc.createElement(key) #
                     child.appendChild(listitem.getnode())
                     listitem.setparent(child)
+                config.getnode().appendChild(child) #
         else:
-            child = listitem.getnode()
-            listitem.setparent(newnode)
-        config.getnode().appendChild(child)
+            child = doc.createElement(key)
+            child.appendChild(listitem.getnode())
+            listitem.setparent(child)
+            config.getnode().appendChild(child) #
         config[key] = members[key]
     if attributes:
         for key in attributes:
@@ -152,17 +157,43 @@ def fill_configuration(config,tag,members,attributes=None):
 def attach_configuration(destconf,desttag,srcconf):
     '''Tool for attaching a "filled" Configuration to both a document and to a subsuming Configuration.
        Caution: desttag must match the tag-argument with which srcconf was "filled"'''
-    if isinstance(destconf[desttag],list) or isinstance(destconf[desttag],tuple):
-        parent = destconf[desttag][0].getparent()
-        destlist = list(destconf[desttag])
-        destlist.append(srcconf)
-        destconf[desttag] = tuple(destlist)
+    ### Additional notes:
+    ### destconf should be the closest Configuration prior to reaching destconf[desttag], e.g.,
+    ### To attach srconf into conf["list"]["files"],
+    ### destconf should be a Configuration found in conf["list"], and
+    ### desttag should be "files".
+    parent = destconf.getnode()
+    if not (desttag in destconf.keys()):
+        destconf[desttag] = srcconf
     else:
-        parent = destconf[desttag].getparent()
-        destlist = [ destconf[desttag], srcconf ]
-        destconf[desttag] = tuple(destlist)
+        if isinstance(destconf[desttag],list) or isinstance(destconf[desttag],tuple):
+            destlist = list(destconf[desttag])
+            destlist.append(srcconf)
+            destconf[desttag] = tuple(destlist)
+        else:
+            destlist = [ destconf[desttag], srcconf ]
+            destconf[desttag] = tuple(destlist)
     srcconf.setparent(parent)
     parent.appendChild(srcconf.getnode())
+
+
+
+def remove_configuration(destconf,tag,srcconf):
+    '''Tool for removing a Configuration from a document.'''
+    ### destconf is the Configuration containing the target, srcconf,
+    ### which must be found under destconf[desttag]
+    parent = destconf.getnode()
+    if isinstance(destconf[tag],list) or isinstance(destconf[tag],tuple):
+        destlist = list(destconf[tag])
+        for i in range(0,len(destlist)):
+            if srcconf == destlist[i]:
+                parent.removeChild(srcconf.getnode())
+                destlist.pop(i)
+                destconf[tag]=tuple(destlist)
+                break
+    elif isinstance(destconf[tag],Configuration):
+        parent.removeChild(srcconf.getnode())
+        del destconf[tag]
 
         
 
@@ -170,7 +201,6 @@ def tree(doc,nd=None,mrk=""):
     '''Diagnostic tool for printing the xml doc'''
     if nd is None:
         nd = doc
-    #print("(",len(nd.childNodes),")")
     for k in nd.childNodes:
         if k.nodeType is k.ELEMENT_NODE:
             print("\n",mrk,k.tagName,end=" > ")
@@ -183,6 +213,37 @@ def tree(doc,nd=None,mrk=""):
             buffer_data = k.data.strip(" \n")
             print(" ",buffer_data,end="")
             continue
+
+
+        
+def _to_string(node,nt):
+    '''Diagnostic function: string equivalents of node-types in XML.DOM.MINIDOM'''
+    if nt==node.ELEMENT_NODE:
+        return "ELEMENT: " + node.tagName
+    if nt==node.TEXT_NODE:
+        return "TEXT: " + node.data
+    if nt==node.CDATA_SECTION_NODE:
+        return "CDATA_SECTION"
+    if nt==node.ENTITY_REFERENCE_NODE:
+        return "ENTITY_REFERENCE"
+    if nt==node.PROCESSING_INSTRUCTION_NODE:
+        return "PROCESSING_INSTRUCTION"
+    if nt==node.COMMENT_NODE:
+        return "COMMENT"
+    if nt==node.NOTATION_NODE:
+        return "NOTATION"
+
+    
+
+def _delve(doc,node,space):
+    '''Diagnostic function: recurse through an XML.DOM.MINIDOM document and print children'''
+    if node.hasChildNodes():
+        print(space,"Children:")
+        for child in node.childNodes:
+            print(space,_to_string(child,child.nodeType))
+            _delve(doc,child,space+"   ")
+    else:
+        print(space,"No children")
 
         
         
@@ -211,6 +272,7 @@ def _traverse_dict(nd,parent):
     
 
 def _traverse_conf(doc,nd,parent):
+    '''Function to map an XML.DOM.MINIDOM document to a Configuration complex'''
     if len(nd.childNodes)==1:
         # either we have data, or we have a tag-within-a-tag
         if nd.childNodes[0].nodeType == nd.childNodes[0].TEXT_NODE:
@@ -237,7 +299,6 @@ def _traverse_conf(doc,nd,parent):
 def _load_doc(name):
     f = open(name,"r")
     scrubbed = scrubber.ScrubberXML(length=config.XML_MAX_CHAR,depth=config.XML_STACK_DEPTH,text=f.read())
-    #doc =  xml.dom.minidom.parse(f)
     doc =  xml.dom.minidom.parseString(scrubbed.get_parsed())
     f.close()
     return doc

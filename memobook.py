@@ -56,7 +56,8 @@ class Memobook:
     offset = []
     ctrl = None
     data = None
-
+    index = None
+    
 
     def __init__(self,**kwargs):
         if "ctrl" in kwargs.keys():
@@ -81,6 +82,18 @@ class Memobook:
             if exc:
                 messagebox.showinfo( "Data error","Unable to open data source: " + str(exc) )
                 self.data = FileBinding(self.ctrl)
+        if "index" in kwargs.keys():
+            try:
+                self.index = extconf.load_file(kwargs["index"])
+            except Exception as e:
+                print("Error loading non-text index: " + str(e))
+            else:
+                index_loc = str(os.path.dirname(kwargs["index"]))
+                if index_loc == '':
+                    self.ctrl["index"] = '.'
+                else:
+                    self.ctrl["index"] = index_loc
+                self.data.set_index(self.index)
         if "root" in kwargs.keys():
             self.root = kwargs["root"]
         else:
@@ -194,11 +207,12 @@ class Memobook:
     def open_mark( self, callback ):  # open by mark
         ### despite using select, invoke, focus_set, event_generate,
         ### tk wouldn't set the OR radiobutton as default.
-        ### So this function is a workaround to force the issue.
+        ### So the following sub-function is a workaround to force the issue.
         def default_selection(var):
             var.set("or")
         toc = list(self.data.toc())
-        toc.sort(key=lambda x: x[0])
+        #toc.sort(key=lambda x: x[0]) #toc doesn't return a tuple of tuples, but a tuple of strings
+        toc.sort(key=lambda x: x.lower())
         getter = Toplevel(self.root)
         getter_list = ListboxHV(getter,selectmode="multiple")
         for item in toc:
@@ -330,7 +344,6 @@ class Memobook:
 
     def __process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
         if note is None:
-            print("note is None")
             return 1
         if (note.ID == "") or saveas:
             try:
@@ -430,6 +443,7 @@ class Memobook:
         self.ctrl["x"] = str(self.root.winfo_width()-self.offset[0])
         self.ctrl["y"] = str(self.root.winfo_height()-self.offset[1] - 19)
         self.ctrl.print_config(str(self.ctrl["loc"]+os.sep+"conf.xml"))
+        self.index.print_config(str(self.ctrl["index"]+os.sep+"index.xml"))
         self.root.destroy()
 
 
@@ -523,10 +537,13 @@ class Memobook:
                 listbox.delete(index)
         def process_dest(win,listbox):
             destlist = listbox.get(0,END)
-            self.__mark_store(win,
-                              [destlist[j] for j in map(int,listbox.curselection())])
+            self.__mark_update_index(win,
+                                     #[destlist[j] for j in map(int,listbox.curselection())],
+                                     destlist,
+                                     self.tabs.getnoteref(self.tabs.index("current")))
         getter = Toplevel(self.root)
-        if self.tabs.getnoteref(self.tabs.index("current")).mime == NoteMime.TEXT:
+        focus = self.tabs.getnoteref(self.tabs.index("current")) 
+        if focus.mime == NoteMime.TEXT:
             getter_list = ListboxHV(getter,selectmode="multiple")
             getter_items = self.tabs.marks()
             getter_items.sort()
@@ -554,6 +571,9 @@ class Memobook:
                                     text="Marks to be stored:")
             top_right_dest = ListboxHV(top_right_frame,
                                        selectmode="multiple")
+            if focus.tags:
+                for t in focus.tags:
+                    top_right_dest.insert(END,t)
             top_cent_frame = Frame(top_frame)
             top_cent_add = Button(top_cent_frame,
                                   text="→",
@@ -597,7 +617,12 @@ class Memobook:
             bottom_middle_add.pack(side="right",anchor="w")
             bottom_middle_frame.pack(side="bottom",anchor="w")
             bottom_frame.pack(side="bottom")
-    
+
+
+    def __mark_update_index( self, win, ls, nt ):
+        self.data.update(nt,ls)
+        self.__mark_store(win,ls)
+
     
     def __mark_store( self,win,ls ):  # callback function for mark_dialogue
         self.tabs.writetocurrent(ls)
