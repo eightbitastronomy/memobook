@@ -18,6 +18,10 @@ class ScrolledCanvas(tkinter.Canvas):
     __sz = None
     __canvas_ref = None
     __scale = 1.0
+    __x = 0
+    __y = 0
+    __inc_x = 0.
+    __inc_y = 0.
     
     def __init__(self,master,**kwargs):
         self.__frame = tkinter.Frame(master)
@@ -61,6 +65,8 @@ class ScrolledCanvas(tkinter.Canvas):
             self.__src_tk = ImageTk.PhotoImage(self.__src)
             self.__canvas_ref = self.create_image(0,0,image=self.__src_tk,anchor="nw")
         self.__frame.bind("<Configure>", lambda e: self.__on_frame_configure())
+        self.bind("<Button-1>",lambda e: self.__drag_start(e.x,e.y))
+        self.bind("<B1-Motion>",lambda e: self.__drag(e.x,e.y))
         canv_meths = vars(tkinter.Canvas).keys()
         methods = vars(tkinter.Pack).keys() | vars(tkinter.Grid).keys() | vars(tkinter.Place).keys()
         methods = methods.difference(canv_meths)
@@ -117,3 +123,22 @@ class ScrolledCanvas(tkinter.Canvas):
     def __on_frame_configure(self):
         '''Reset the scroll region to encompass the inner frame'''
         tkinter.Canvas.configure(self,scrollregion=self.bbox("all"))
+
+    def __drag_start(self,x,y):
+        '''Mouse button down; begin drag operation; collect position information'''
+        self.__x = x
+        self.__y = y
+        bounding = self.bbox(self.__canvas_ref)
+        self.__inc_x = 1./float(bounding[2]-bounding[0])
+        self.__inc_y = 1./float(bounding[2]-bounding[1])
+
+    def __drag(self,x,y):
+        '''Mouse button down while motion detected; drag operation; scroll canvas image'''
+        deltax = float(self.__x - x)
+        deltay = float(self.__y - y)
+        movex = deltax*self.__inc_x + self.xview()[0]
+        self.xview_moveto(movex)
+        movey = deltay*self.__inc_y + self.yview()[0]
+        self.yview_moveto(movey)
+        self.__x = x
+        self.__y = y
