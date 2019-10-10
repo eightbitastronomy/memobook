@@ -8,6 +8,7 @@ import magic
 import sqlite3
 import PIL
 import extconf
+from pdf2image import convert_from_path
 from note import Note, NoteMime
 
 
@@ -84,7 +85,7 @@ def _mime_open(fname,index=None):
         if tmp_type.find("image") >= 0:
             return _targeted_image(fname,index)
         if tmp_type.find("pdf") >= 0:
-            return None
+            return _targeted_pdf(fname,index)
         return None
 
     
@@ -117,8 +118,6 @@ def _targeted_image(name,index=None):
         newnt = Note()
         newnt.title = os.path.basename(name)
         newnt.ID = name
-        #with PIL.Image.open(name) as img_src:
-        #    newnt.body = img_src
         newnt.body = PIL.Image.open(name)
         newnt.mime = NoteMime.IMAGE
         if index:
@@ -142,7 +141,36 @@ def _targeted_image(name,index=None):
         raise Exception(e)
     else:
         return newnt
-    
+
+
+def _targeted_pdf(name,index=None):
+    try:
+        newnt = Note()
+        newnt.title = os.path.basename(name)
+        newnt.ID = name
+        newnt.body = convert_from_path(name)
+        newnt.mime = NoteMime.PDF
+        if index:
+            target = None
+            tmp_files = index["file"]
+            if isinstance(tmp_files,extconf.Configuration):
+                if tmp_files["loc"] == name:
+                    target = tmp_files
+            else:
+                for f in tmp_files:
+                    if f["loc"] == name:
+                        target = f
+                        break
+            if target:
+                tmp_marks = target["mark"]
+                if isinstance(tmp_marks,str):
+                    newnt.tags = [ tmp_marks ]
+                else:
+                    newnt.tags = list(tmp_marks)
+    except Exception as e:
+        raise Exception(e)
+    else:
+        return newnt
 
 
 

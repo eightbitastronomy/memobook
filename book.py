@@ -10,7 +10,7 @@ from tkinter import ttk
 from PIL import Image as im
 from PIL import ImageTk
 from note import NoteMime
-from page import TextPage, ImagePage
+from page import TextPage, ImagePage, PDFPage
 from config import TAB_SIZE
 
 
@@ -177,6 +177,8 @@ class Book(NotebookCloseTab):
                 newpg.toggle_wrap(self._ctrl["wrap"])
         if nt.mime == NoteMime.IMAGE:
             newpg = ImagePage(self,nt)
+        if nt.mime == NoteMime.PDF:
+            newpg = PDFPage(self,nt)
         self._pgs.append( newpg )
         newpg.setnotblank()
         newpg.set_changed(False)

@@ -5,7 +5,8 @@ import tkinter
 from tkinter import Frame
 import hscroll
 import note
-from scrolledcanvas import ScrolledCanvas
+from imagecanvas import ImageCanvas
+from pdfcanvas import PDFCanvas
 
 
 class State(enum.Enum):
@@ -113,12 +114,29 @@ class TextPage(Page):
         
 class ImagePage(Page):
     '''Image-encapsulating Page'''
-    _zoom = 100.0
-    _rot = 0.0
     def __init__(self,win,nt):
         ### tab and plate must be handled differently than for TextPage...
-        ### b/c I built TextCompound and ScrolledCanvas in an inherently different way.
-        self.plate = ScrolledCanvas(win,image=nt.body)
+        ### b/c I built TextCompound and ImageCanvas in an inherently different way.
+        self.plate = ImageCanvas(win,image=nt.body)
+        self.tab = self.plate.get_frame()
+        self.plate.pack(fill='both',expand=tkinter.YES)
+        self.note = nt
+    def changed(self):
+        return False
+    def dump(self):
+        return None
+    def append(self,mtrl):
+        ### 'append' for Image is actually a 'replace' action
+        self.note.tags = note.Tag()
+        for item in mtrl:
+            self.note.tags.append(str(item))
+
+
+class PDFPage(Page):
+    '''PDF-encapsulating Page'''
+    def __init__(self,win,nt):
+        ### tab and plate must be handled differently than for TextPage...
+        self.plate = PDFCanvas(win,document=nt.body)
         self.tab = self.plate.get_frame()
         self.plate.pack(fill='both',expand=tkinter.YES)
         self.note = nt
