@@ -141,6 +141,7 @@ def fill_configuration(config,tag,members,attributes=None):
                     listitem.setparent(child)
                 config.getnode().appendChild(child) #
         else:
+            listitem = members[key]
             child = doc.createElement(key)
             child.appendChild(listitem.getnode())
             listitem.setparent(child)
@@ -162,6 +163,7 @@ def attach_configuration(destconf,desttag,srcconf):
     ### To attach srconf into conf["list"]["files"],
     ### destconf should be a Configuration found in conf["list"], and
     ### desttag should be "files".
+    ### THIS CANNOT BE USED FOR ADDING THE FIRST ELEMENT TO AN EMPTY DOC
     parent = destconf.getnode()
     if not (desttag in destconf.keys()):
         destconf[desttag] = srcconf
@@ -194,6 +196,29 @@ def remove_configuration(destconf,tag,srcconf):
     elif isinstance(destconf[tag],Configuration):
         parent.removeChild(srcconf.getnode())
         del destconf[tag]
+
+
+
+def attach_top_configuration(doc,tag,srcconf,parenttag,destconf):
+    '''Special case tool: Add Configuration to a Configuration tree which exists but is not populated'''
+    ### When the topmost dictionary call is a string or empty,
+    ### XML might appear as <?xml version="1.0" ?><contents></contents>,
+    ### then to add a Configuration inside contents tag is a slightly specialized
+    ### case where attach_configuration is not the best choice because
+    ### a call like destconf[parenttag] returns a string from which no parent
+    ### may be resolved (as would be attempted in attach_configuration).
+    ### tag & srcconf refer to the Configurations to be attached,
+    ### parenttag & destconf refer to the existing top/empty Configuration for
+    ### the XML tree (i.e., the <contents> tag).
+    topc = Configuration(doc)
+    if doc.hasChildNodes():
+        parent = doc.childNodes[0]
+    else:
+        parent = doc.createElement(parenttag)
+    fill_configuration(topc,parenttag,members={tag:srcconf},attributes=None)
+    topc.setnode = parent
+    srcconf.setparent(parent)
+    destconf[parenttag] = topc
 
         
 
@@ -309,6 +334,8 @@ def load_file(name):
     if name is not None:
         doc = _load_doc(name)
         extconf = _traverse_conf(doc,doc.childNodes[0],doc)
+        if isinstance(extconf,str):
+            extconf = _traverse_conf(doc,doc,doc)
         return extconf
 
 

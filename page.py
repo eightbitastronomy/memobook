@@ -117,7 +117,7 @@ class ImagePage(Page):
     def __init__(self,win,nt):
         ### tab and plate must be handled differently than for TextPage...
         ### b/c I built TextCompound and ImageCanvas in an inherently different way.
-        self.plate = ImageCanvas(win,image=nt.body)
+        self.plate = ImageCanvas(win,source=nt.body)
         self.tab = self.plate.get_frame()
         self.plate.pack(fill='both',expand=tkinter.YES)
         self.note = nt
@@ -136,7 +136,7 @@ class PDFPage(Page):
     '''PDF-encapsulating Page'''
     def __init__(self,win,nt):
         ### tab and plate must be handled differently than for TextPage...
-        self.plate = PDFCanvas(win,document=nt.body)
+        self.plate = PDFCanvas(win,source=nt.body)
         self.tab = self.plate.get_frame()
         self.plate.pack(fill='both',expand=tkinter.YES)
         self.note = nt
