@@ -443,7 +443,8 @@ class Memobook:
         self.ctrl["x"] = str(self.root.winfo_width()-self.offset[0])
         self.ctrl["y"] = str(self.root.winfo_height()-self.offset[1] - 19)
         self.ctrl.print_config(str(self.ctrl["loc"]+os.sep+"conf.xml"))
-        self.index.print_config(str(self.ctrl["index"]+os.sep+"index.xml"))
+        if isinstance(self.index,extconf.Configuration):
+            self.index.print_config(str(self.ctrl["index"]+os.sep+"index.xml"))
         self.root.destroy()
 
 

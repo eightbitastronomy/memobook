@@ -8,6 +8,7 @@ import magic
 import sqlite3
 import PIL
 import extconf
+from pdf2image import convert_from_path
 from note import Note, NoteMime
 
 
@@ -84,7 +85,7 @@ def _mime_open(fname,index=None):
         if tmp_type.find("image") >= 0:
             return _targeted_image(fname,index)
         if tmp_type.find("pdf") >= 0:
-            return None
+            return _targeted_pdf(fname,index)
         return None
 
     
@@ -117,8 +118,6 @@ def _targeted_image(name,index=None):
         newnt = Note()
         newnt.title = os.path.basename(name)
         newnt.ID = name
-        #with PIL.Image.open(name) as img_src:
-        #    newnt.body = img_src
         newnt.body = PIL.Image.open(name)
         newnt.mime = NoteMime.IMAGE
         if index:
@@ -138,11 +137,48 @@ def _targeted_image(name,index=None):
                     newnt.tags = [ tmp_marks ]
                 else:
                     newnt.tags = list(tmp_marks)
+    except TypeError as ke:
+        return newnt
+    except KeyError as ke:
+        return newnt
     except Exception as e:
         raise Exception(e)
     else:
         return newnt
-    
+
+
+def _targeted_pdf(name,index=None):
+    try:
+        newnt = Note()
+        newnt.title = os.path.basename(name)
+        newnt.ID = name
+        newnt.body = convert_from_path(name)
+        newnt.mime = NoteMime.PDF
+        if index:
+            target = None
+            tmp_files = index["file"]
+            if isinstance(tmp_files,extconf.Configuration):
+                if tmp_files["loc"] == name:
+                    target = tmp_files
+            else:
+                for f in tmp_files:
+                    if f["loc"] == name:
+                        target = f
+                        break
+            if target:
+                tmp_marks = target["mark"]
+                if isinstance(tmp_marks,str):
+                    newnt.tags = [ tmp_marks ]
+                else:
+                    newnt.tags = list(tmp_marks)
+    except TypeError as ke:
+        return newnt
+    except KeyError as ke:
+        return newnt
+    except Exception as e:
+        raise Exception(e)
+    else:
+        return newnt
 
 
 
@@ -403,7 +439,12 @@ class DatabaseBinding(Binding):
         self.__dex = dex
         
     def __load_index(self):
-        files = self.__dex["file"]
+        try:
+            files = self.__dex["file"]
+        except:
+            return
+        if isinstance(files,extconf.Configuration):
+            files = ( files, )
         for f in files:
             loc = f["loc"]
             if not os.access(loc,os.R_OK):
@@ -634,22 +675,42 @@ class DatabaseBinding(Binding):
         nt.tags = marks
         # find the file in the index ( update or create it )
         target = None
-        tmp_files = self.__dex["file"]
-        if isinstance(tmp_files,extconf.Configuration):
-            if tmp_files["loc"] == nt.ID:
-                target = tmp_files
-        else:
-            for f in tmp_files:
-                if f["loc"] == nt.ID:
-                    target = f
-                    break
-        if target:
-            target["mark"] = marks
-        else:
+        try:
+            tmp_files = self.__dex["file"]
+        except Exception as e:
+            # no existing file tags
             newc = extconf.Configuration(self.__dex.getdoc())
-            extconf.fill_configuration(newc,"file",members={"loc":nt.ID,"mark":[item for item in nt.tags]},attributes={"type":nt.mime.value})
-            extconf.attach_configuration(self.__dex,"file",newc)
+            extconf.fill_configuration(newc,"file",members={"loc":nt.ID,"mark":[item for item in nt.tags]},attributes={"type":str(nt.mime.value)})
+            extconf.attach_top_configuration(self.__dex.getdoc(),"file",newc,"contents",self.__dex)
+            for tag in marks:
+                self.__cursor.execute('''insert into bookmarks (mark,file,type) values (?,?,?)''',(tag,nt.ID,nt.mime.value))
+        else:
+            if isinstance(tmp_files,extconf.Configuration):
+                if tmp_files["loc"] == nt.ID:
+                    target = tmp_files
+            else:
+                for f in tmp_files:
+                    if f["loc"] == nt.ID:
+                        target = f
+                        break
+            if target:
+                target["mark"] = marks
+            else:
+                newc = extconf.Configuration(self.__dex.getdoc())
+                extconf.fill_configuration(newc,"file",members={"loc":nt.ID,"mark":[item for item in nt.tags]},attributes={"type":str(nt.mime.value)})
+                extconf.attach_configuration(self.__dex,"file",newc)
+            self.__cursor.execute('''select rowid,mark from bookmarks where file=?''',(nt.ID,))
+            db_hits = self.__cursor.fetchall()
+            for item in db_hits:
+                if not (item[1] in marks):
+                    self.__cursor.execute('''delete from bookmarks where rowid=?''',(item[0],))
+            self._src.commit()
+            for tag in marks:
+                if not (tag in [ item[1] for item in db_hits ]):
+                    self.__cursor.execute('''insert into bookmarks (mark,file,type) values (?,?,?)''',(tag,nt.ID,nt.mime.value))
+        self._src.commit()
 
+                
     def __del__(self):
         if self._src:
             self._src.close()

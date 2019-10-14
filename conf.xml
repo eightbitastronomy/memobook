@@ -4,6 +4,7 @@
       <src>archive.db</src>
       <table>bookmarks</table>
       <scan>.</scan>
+      <scan>.</scan>
     </db>
     <mime>
       <Text>
@@ -46,9 +47,12 @@
         <suff>.xbm</suff>
         <suff>.xpm</suff>
       </Image>
+      <PDF>
+        <suff>.pdf</suff>
+      </PDF>
     </mime>
     <font>
-      <family>Cantarell</family>
+      <family>FreeSans</family>
       <size>10</size>
       <weight>normal</weight>
     </font>
@@ -63,6 +67,6 @@
     <loc>.</loc>
     <index>.</index>
     <open>.</open>
-    <x>707</x>
-    <y>337</y>
+    <x>949</x>
+    <y>451</y>
   </configuration>
