@@ -26,6 +26,7 @@ from tkinter.ttk import Style
 from memo.book import Book
 import memo.extconf as extconf
 import memo.parse as parse
+import memo.empty as empty
 from memo.hscroll import ListboxHV
 from memo.binding import FileBinding, DatabaseBinding
 from memo.note import NoteMime
@@ -64,14 +65,19 @@ class Memobook:
             try:
                 self.ctrl = extconf.load_file(kwargs["ctrl"])
             except Exception as e:
-                print("Error loading or preparing memobook: " + str(e))
-                return
+                #print("Error loading or preparing memobook: " + str(e))
+                empty.write_skeleton_conf("conf.xml")
+                self.ctrl = extconf.load_file("conf.xml")
+                working_loc = '.'
             else:
                 working_loc = str(os.path.dirname(kwargs["ctrl"]))
                 if working_loc == '':
-                    self.ctrl["loc"] = '.'
-                else:
-                    self.ctrl["loc"] = working_loc
+                    working_loc == '.'
+        else:
+            empty.write_skeleton_conf("conf.xml")
+            self.ctrl = extconf.load_file("conf.xml")
+            working_loc = '.'
+        self.ctrl["loc"] = working_loc
         if not "scan" in self.ctrl["db"].keys() :
             self.ctrl["db"]["scan"] = "."
         if "data" in kwargs.keys():
@@ -86,14 +92,20 @@ class Memobook:
             try:
                 self.index = extconf.load_file(kwargs["index"])
             except Exception as e:
-                print("Error loading non-text index: " + str(e))
+                #print("Error loading non-text index: " + str(e))
+                empty.write_skeleton_index("index.xml")
+                self.index = extconf.load_file("index.xml")
+                index_loc = '.'
             else:
                 index_loc = str(os.path.dirname(kwargs["index"]))
                 if index_loc == '':
-                    self.ctrl["index"] = '.'
-                else:
-                    self.ctrl["index"] = index_loc
-                self.data.set_index(self.index)
+                    index_loc = '.'
+        else:
+            empty.write_skeleton_index("index.xml")
+            self.index = extconf.load_file("index.xml")
+            index_loc = '.'
+        self.ctrl["index"] = index_loc
+        self.data.set_index(self.index)
         if "root" in kwargs.keys():
             self.root = kwargs["root"]
         else:
