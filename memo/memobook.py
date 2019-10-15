@@ -150,11 +150,6 @@ class Memobook:
         self.root.grid_rowconfigure(0,weight=1)
         self.offset = [ self.tabs.winfo_reqwidth()-int(self.ctrl["x"]),
                         self.tabs.winfo_reqheight()-int(self.ctrl["y"]) ]
-        #style = Style()
-        #style.configure(".",
-        #                font=(self.ctrl["style"]["font"]["family"],
-        #                      self.ctrl["style"]["font"]["size"],
-        #                      self.ctrl["style"]["font"]["weight"],))
 
 
     def __populate_menus( self ):
@@ -167,7 +162,7 @@ class Memobook:
         mdict[Heading.MF].add_command(label="New",
                                       command=lambda: self.tabs.newpage(None))
         mdict[Heading.MF].add_command(label="Open by mark",
-                                      command=lambda: self.open_mark(self.__open_mark_open))
+                                      command=lambda: self.open_mark(self.__open_mark_confirm))
         mdict[Heading.MF].add_command(label="Open from file",
                                       command=lambda: self.open_file())
         mdict[Heading.MF].add_command(label="Save",
@@ -199,6 +194,8 @@ class Memobook:
                                           command=lambda: self.tabs.togglewrapall())
         mdict[Heading.MS].add_command(label="Scan",
                                       command=lambda: self.data.populate())
+        mdict[Heading.MS].add_command(label="Clear",
+                                      command=lambda: self.data.clear())
         mdict[Heading.MS].add_command(label="Manage locations",
                                       command=lambda: self.__open_pop(self.__open_pop_remove,
                                                                      self.__open_pop_add,
@@ -246,8 +243,12 @@ class Memobook:
                          command=lambda: callback(getter,
                                                   [ toc[int(j)] for j in getter_list.curselection() ],
                                                   logic_variable.get()))
+        cancbutt = Button(button_frame,
+                          text="Cancel",
+                          command=lambda: getter.destroy())
         radiobutt_OR.pack(side="left")
         radiobutt_AND.pack(side="left")
+        cancbutt.pack(side="left")
         retbutt.pack(side="left")
         button_frame.pack(side="bottom")
         radiobutt_OR.invoke()
@@ -278,6 +279,68 @@ class Memobook:
                 for note in notes:
                     self.tabs.newpage(note)
         win.destroy()
+
+
+    def __open_mark_confirm( self, win, ls, logic ):
+        def launch(choices):
+            if choices:
+                for note in choices:
+                    self.tabs.newpage(note)
+            chooser.destroy()
+            win.destroy()
+        if ls:
+            if logic == "or":
+                notes = self.data.open_from_toc(ls)
+            elif logic == "and":
+                notes = self.data.open_from_toc_intersection(ls)
+            else:
+                notes = []
+            if not notes:
+                last = self.data.get_last_error()
+                if last:
+                    messagebox.showinfo("Open error",
+                                    "Unable to open file(s): " + str(self.data.get_last_error()))
+                else:
+                    failure = ", ".join(ls)
+                    if logic == "or":
+                        messagebox.showinfo("Open failure",
+                                            "Unable to find files for any of the following marks: " + failure)
+                    else:
+                        messagebox.showinfo("Open failure",
+                                            "Unable to find files containing each of the following marks: " + failure)
+            else:
+                if len(notes) == 1:
+                    self.tabs.newpage(notes[0])
+                    win.destroy()
+                    return
+                notes.sort(key=lambda x: str(os.path.basename(x.ID)))
+                chooser = Toplevel(self.root)
+                chooser_frame = Frame(chooser)
+                chooser_banner = Label(chooser_frame,
+                                       text="The following files were found.\nPlease select which files to open:",
+                                       padx=10,
+                                       pady=5)
+                chooser_list = ListboxHV(chooser_frame,selectmode="multiple")
+                for i,item in enumerate(notes):
+                    chooser_list.insert(END,"{:>5}{:<32}".format(str(i+1)+". ",str(os.path.basename(item.ID)) + "  (" + str(os.path.dirname(item.ID)) + ")"))
+                chooser_list.pack(fill="both",expand="true")
+                button_frame = Frame(chooser)
+                button_open = Button(button_frame,
+                                     text="Open",
+                                     command=lambda: launch([notes[j] for j in map(int,chooser_list.curselection())]))
+                button_open_all = Button(button_frame,
+                                         text="Open All",
+                                         command=lambda: launch(notes))
+                button_cancel = Button(button_frame,
+                                       text="Cancel",
+                                       command=lambda: chooser.destroy())
+                chooser_list.pack(side="bottom")
+                chooser_banner.pack(side="top")
+                chooser_frame.pack(side="top")
+                button_cancel.pack(side="left")
+                button_open_all.pack(side="left")
+                button_open.pack(side="right")
+                button_frame.pack(side="bottom")
 
 
     def __build_file_types(self):

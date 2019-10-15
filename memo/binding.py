@@ -609,10 +609,15 @@ class DatabaseBinding(Binding):
         if not ls:
             return None
         research_list = []
-        for item in ls:
-            self.__cursor.execute('''select file from bookmarks where mark=?''',(item,))
-            for result in self.__cursor.fetchall():
-                research_list.append(result[0])
+        if len(ls) > 1:
+            query_string = '''select file from bookmarks where mark=?'''
+            for item in ls[1:]:
+                query_string += ''' union select file from bookmarks where mark=?'''
+            self.__cursor.execute(query_string,tuple(ls))
+        else:
+            self.__cursor.execute('''select file from bookmarks where mark=?''',(ls[0],))
+        for result in self.__cursor.fetchall():
+            research_list.append(result[0])
         return self.open_note(research_list)
 
     def open_from_toc_intersection(self,ls):
