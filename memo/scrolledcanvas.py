@@ -34,10 +34,9 @@ class ScrolledCanvas(tkinter.Canvas):
     _inc_x = 0.
     _inc_y = 0.
     _auto_resize = None
-    #__ccw = None
     __ccw_tk = None
-    #__cw = None
     __cw_tk = None
+    _font_adjust = 0
     
     def __init__(self,master,**kwargs):
         if "source" in kwargs.keys():
@@ -45,6 +44,9 @@ class ScrolledCanvas(tkinter.Canvas):
             del kwargs["source"]
         else:
             raise Exception("ScrolledCanvas requires a source file for constructor")
+        if "fontadjust" in kwargs.keys():
+            self._font_adjust = kwargs["fontadjust"]
+            del kwargs["fontadjust"]
         self._frame = tkinter.Frame(master)
         self._ctrl_frame = tkinter.Frame(self._frame,
                                           width=1)
@@ -52,7 +54,7 @@ class ScrolledCanvas(tkinter.Canvas):
         kwargs.update({"master":self._disp_frame})
         tkinter.Canvas.__init__(self,**kwargs)
         __ccw = Image.open(io.BytesIO(base64.b64decode(ccw_str)))
-        self.__ccw_tk = ImageTk.PhotoImage(__ccw.resize((14,14,)))
+        self.__ccw_tk = ImageTk.PhotoImage(__ccw.resize((14+self._font_adjust,14+self._font_adjust,)))
         self._rotate_CCW_bt = tkinter.Button(self._ctrl_frame,
                                              text="L",
                                              image=self.__ccw_tk,
@@ -60,7 +62,7 @@ class ScrolledCanvas(tkinter.Canvas):
                                              pady=0,
                                              command=lambda: self._rotate_CCW())
         __cw = Image.open(io.BytesIO(base64.b64decode(cw_str)))
-        self.__cw_tk = ImageTk.PhotoImage(__cw.resize((14,14,)))
+        self.__cw_tk = ImageTk.PhotoImage(__cw.resize((14+self._font_adjust,14+self._font_adjust,)))
         self._rotate_CW_bt = tkinter.Button(self._ctrl_frame,
                                             text="R",
                                             image=self.__cw_tk,

@@ -176,9 +176,9 @@ class Book(NotebookCloseTab):
             if self._ctrl:
                 newpg.toggle_wrap(self._ctrl["wrap"])
         if nt.mime == NoteMime.IMAGE:
-            newpg = ImagePage(self,nt)
+            newpg = ImagePage(self,nt,size=int(self._ctrl["style"]["font"]["size"]))
         if nt.mime == NoteMime.PDF:
-            newpg = PDFPage(self,nt)
+            newpg = PDFPage(self,nt,size=int(self._ctrl["style"]["font"]["size"]))
         self._pgs.append( newpg )
         newpg.setnotblank()
         newpg.set_changed(False)

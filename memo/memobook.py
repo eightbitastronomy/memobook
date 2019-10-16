@@ -193,7 +193,7 @@ class Memobook:
                                           variable=self.ctrl["wrap"],
                                           command=lambda: self.tabs.togglewrapall())
         mdict[Heading.MS].add_command(label="Scan",
-                                      command=lambda: self.data.populate())
+                                      command=lambda: self.__get_busy_with(self.data.populate))
         mdict[Heading.MS].add_command(label="Clear",
                                       command=lambda: self.data.clear())
         mdict[Heading.MS].add_command(label="Manage locations",
@@ -369,7 +369,7 @@ class Memobook:
                                                      filetypes=self.__build_file_types())
         if file_names:
             self.data.set_active_open(os.path.dirname(file_names[0]))
-            list_of_notes = self.data.open_note(file_names)
+            list_of_notes = self.__get_busy_with(self.data.open_note,file_names)
             for nt in list_of_notes:
                 self.tabs.newpage(nt)
 
@@ -728,7 +728,7 @@ class Memobook:
                          command=lambda: hook_add(manager,manager_list,manager_items) )
         appbutt = Button(buttons,
                          text="Apply",
-                         command=lambda: hook_apply(manager,manager_items) )
+                         command=lambda: self.__get_busy_with(hook_apply,manager,manager_items) )
         rembutt.grid(row=1,column=0)
         addbutt.grid(row=1,column=1)
         appbutt.grid(row=1,column=2)
@@ -771,6 +771,33 @@ class Memobook:
         self.data.populate()
         win.destroy()
 
+
+    def __get_busy_with(self, fctn, *args):  # wrapper to invoke mouse busy icon
+        ### Example of use: for a call, buff = f(arg1,arg2,arg3), use
+        ### buff = self.__get_busy_with(f,arg1,arg2,arg3)
+        ### The choice was made not to recursively propagate through self.root
+        ### and its descendants: this seems overly broad and might involve
+        ### propagation through too many (out-of-view) tabs or, worse, might not
+        ### reach the visible tab at all. The biggest negative is that if the
+        ### UI is drastically changed, this function must be tailored to those changes.
+        self.root.config(cursor="watch")
+        self.root.update()
+        self.menu.config(cursor="watch")
+        self.menu.update()
+        self.tabs.config(cursor="watch")
+        self.tabs.update()
+        i = self.tabs.index("current") 
+        if i >= 0:
+            self.tabs.getpageref(i).plate.config(cursor="watch")
+            self.tabs.getpageref(i).plate.update()
+        retval = fctn(*args)
+        self.root.config(cursor="")
+        self.menu.config(cursor="")
+        self.tabs.config(cursor="")
+        if i >= 0:
+            self.tabs.getpageref(i).plate.config(cursor="")
+        return retval
+        
 
     def __publication_info(self):
         pass
