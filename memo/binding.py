@@ -188,6 +188,12 @@ def _targeted_pdf(name,index=None):
 ### File-tree implementation of Binding ###
 
 
+
+### maintenance of FileBinding is ceased, or at least lagging.
+### I last updated it to use _mime_open, but have not kept up
+### with any indexing changes or other changes. Preferably,
+### do not use it until it is brought up-to-date with DatabaseBinding.
+
 class FileBinding(Binding):
     __ctrl = None
     __toc = {}
