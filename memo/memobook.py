@@ -179,8 +179,9 @@ class Memobook:
         mdict[Heading.MF].add_separator()
         mdict[Heading.MF].add_command(label="Quit",
                                       command=lambda: self.exit_all(None))
-        mdict[Heading.ME].add_command(label="Insert mark",
-                                      command=lambda: self.__mark_dialogue(self.__mark_store))
+        mdict[Heading.ME].add_command(label="Edit marks",
+                                      #command=lambda: self.__mark_dialogue(self.__mark_store))
+                                      command=lambda: self.__mark_dialogue_new())
         mdict[Heading.ME].add_separator()
         mdict[Heading.ME].add_command(label="Font",
                                       command=lambda: self.__font_dialogue())
@@ -693,6 +694,176 @@ class Memobook:
             bottom_middle_add.pack(side="right",anchor="w")
             bottom_middle_frame.pack(side="bottom",anchor="w")
             bottom_frame.pack(side="bottom")
+
+
+    def __mark_dialogue_new(self):  # select mark to be added to note from list of current marks
+        def add_to_dest(listbox1,listitems,var="",listbox2=None):
+            if listbox2 and (var in ("VIS","INVIS")):
+                if var == "VIS":
+                    for item in listitems:
+                        listbox1.insert(END,item)
+                else:
+                    for item in listitems:
+                        listbox2.insert(END,item)
+            else:
+                for item in listitems:
+                    listbox1.insert(END,item)
+        def rem_from_dest(listbox):
+            orderlist = list(listbox.curselection())
+            orderlist.sort(reverse=True)
+            for index in orderlist:
+                listbox.delete(index)
+        def process_dest(win,listbox1,listbox2=None):
+            self.tabs.writetocurrent(listbox1.get(0,END))
+            if listbox2:
+                self.data.update(focus,listbox2.get(0,END))
+            else:
+                self.data.update(focus,listbox1.get(0,END))
+            win.destroy()
+        def default_selection(var):
+            var.set("VIS")
+        getter = None
+        focus = self.tabs.getnoteref(self.tabs.index("current"))
+        if not focus:
+            messagebox.showinfo("Edit Marks Error:",
+                                "A tab must be opened before marks can be managed.")
+        else:
+            getter = Toplevel(self.root)
+        top_frame = Frame(getter)
+        top_left_frame = Frame(top_frame)
+        top_left_label = Label(top_left_frame,
+                               text="Marks from open notes:")
+        top_left_getter = ListboxHV(top_left_frame,
+                                    height=12,
+                                    width=27,
+                                    selectmode="multiple")
+        getter_items = self.tabs.marks()
+        getter_items.sort()
+        for item in getter_items:
+            top_left_getter.insert(END,item)
+        top_right_frame = Frame(top_frame)
+        top_cent_frame = Frame(top_frame)
+        bottom_frame = Frame(getter)
+        bottom_middle_frame = Frame(bottom_frame)
+        bottom_middle_label = Label(bottom_middle_frame,
+                                    text="Additional marks:")
+        bottom_middle_enter = Entry(bottom_middle_frame,
+                                    width=24)
+        bottom_bottom_frame = Frame(bottom_frame)
+        bottom_bottom_cancel = Button(bottom_bottom_frame,
+                                      text="Cancel",
+                                      command=lambda: getter.destroy())
+        top_left_label.pack(side="top",anchor="n")
+        top_left_getter.pack(side="bottom",anchor="w")
+        top_left_frame.pack(side="left")            
+        if focus.mime == NoteMime.TEXT:
+            top_right_vis_label = Label(top_right_frame,
+                                        text="Store in text (append to end):")
+            top_right_vis_dest = ListboxHV(top_right_frame,
+                                           height=5,
+                                           width=27,
+                                           selectmode="multiple")
+            top_right_invis_label = Label(top_right_frame,
+                                          text="Hide and store outside of text:")
+            top_right_invis_dest = ListboxHV(top_right_frame,
+                                             height=5,
+                                             width=27,
+                                             selectmode="multiple")
+            if focus.tags:
+                for t in focus.tags:
+                    top_right_vis_dest.insert(END,t)
+                if focus.tags.silent:
+                    for st in focus.tags.silent:
+                        top_right_invis_dest.insert(END,st)
+            top_cent_add_vis = Button(top_cent_frame,
+                                      text="→",
+                                      command=lambda:add_to_dest(top_right_vis_dest,
+                                                                 [getter_items[j] for j in top_left_getter.curselection()]))
+            top_cent_remove_vis = Button(top_cent_frame,
+                                         text="X",
+                                         command=lambda:rem_from_dest(top_right_vis_dest))
+            top_cent_upperspacer = Label(top_cent_frame,
+                                         text="\n\n")
+            top_cent_add_invis = Button(top_cent_frame,
+                                        text="→",
+                                        command=lambda:add_to_dest(top_right_invis_dest,
+                                                                   [getter_items[j] for j in top_left_getter.curselection()]))
+            top_cent_remove_invis = Button(top_cent_frame,
+                                           text="X",
+                                           command=lambda:rem_from_dest(top_right_invis_dest))
+            storage_variable = StringVar(bottom_middle_frame)
+            storage_variable.set("VIS")
+            bottom_middle_radio_VIS = Radiobutton(bottom_middle_frame,
+                                                  text="Visible",
+                                                  variable=storage_variable,
+                                                  command=lambda: default_selection(storage_variable),  # get tk to give default selection
+                                                  value="VIS")
+            bottom_middle_radio_INVIS = Radiobutton(bottom_middle_frame,
+                                                    text="Hidden",
+                                                    variable=storage_variable,
+                                                    value="INVIS")
+            bottom_middle_add = Button(bottom_middle_frame,
+                                       text="↑",
+                                       command=lambda:add_to_dest(top_right_vis_dest,
+                                                                  parse.split_by_unknown(bottom_middle_enter.get()),
+                                                                  storage_variable.get(),
+                                                                  top_right_invis_dest))
+            bottom_bottom_apply = Button(bottom_bottom_frame,
+                                         text="Apply",
+                                         command=lambda:process_dest(getter,top_right_vis_dest,top_right_invis_dest))
+            top_cent_remove_invis.pack(side="bottom")
+            top_cent_add_invis.pack(side="bottom")
+            top_cent_upperspacer.pack(side="bottom")
+            top_cent_remove_vis.pack(side="bottom")
+            top_cent_add_vis.pack(side="bottom")
+            top_right_vis_label.pack(side="top",anchor="n")
+            top_right_vis_dest.pack(side="top",anchor="w")
+            top_right_invis_label.pack(side="top",anchor="n")
+            top_right_invis_dest.pack(side="top",anchor="w")
+            bottom_middle_label.pack(side="left",anchor="w")
+            bottom_middle_enter.pack(side="left",anchor="w",fill="x",expand="true")
+            bottom_middle_radio_VIS.pack(side="left",anchor="w")
+            bottom_middle_radio_INVIS.pack(side="left",anchor="w")
+            bottom_middle_add.pack(side="right",anchor="w")
+        else:
+            top_right_invis_label = Label(top_right_frame,
+                                          text="Hidden and stored outside of text:")
+            top_right_invis_dest = ListboxHV(top_right_frame,
+                                             height=12,
+                                             width=27,                                             
+                                             selectmode="multiple")
+            if focus.tags:
+                for t in focus.tags:
+                    top_right_invis_dest.insert(END,t)
+            top_cent_add_invis = Button(top_cent_frame,
+                                        text="→",
+                                        command=lambda:add_to_dest(top_right_invis_dest,
+                                                                   [getter_items[j] for j in top_left_getter.curselection()]))
+            top_cent_remove_invis = Button(top_cent_frame,
+                                           text="X",
+                                           command=lambda:rem_from_dest(top_right_invis_dest))
+            bottom_middle_add = Button(bottom_middle_frame,
+                                       text="↑",
+                                       command=lambda:add_to_dest(top_right_invis_dest,
+                                                                  parse.split_by_unknown(bottom_middle_enter.get())))
+            bottom_bottom_apply = Button(bottom_bottom_frame,
+                                         text="Apply",
+                                         command=lambda:process_dest(getter,top_right_invis_dest))
+            top_cent_remove_invis.pack(side="bottom")
+            top_cent_add_invis.pack(side="bottom")
+            top_right_invis_label.pack(side="top",anchor="n")
+            top_right_invis_dest.pack(side="top",anchor="w")
+            bottom_middle_label.pack(side="left",anchor="w")
+            bottom_middle_enter.pack(side="left",anchor="w",fill="x",expand="true")
+            bottom_middle_add.pack(side="right",anchor="w")
+        top_cent_frame.pack(side="left")
+        top_right_frame.pack(side="left")
+        top_frame.pack(side="top")
+        bottom_bottom_apply.pack(side="left")
+        bottom_bottom_cancel.pack(side="right")
+        bottom_bottom_frame.pack(side="bottom")
+        bottom_middle_frame.pack(side="bottom",anchor="w")
+        bottom_frame.pack(side="bottom")
 
 
     def __mark_update_index( self, win, ls, nt ):

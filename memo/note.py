@@ -16,10 +16,15 @@ class Tag(list):
 
     def __init__(self,t=None):
         self._mrk = config.TAG_MARKER
+        self.silent = []
         if t is None:
             list.__init__(self)
         else:
-            if type(t)==Tag or type(t)==list:
+            if type(t)==Tag:
+                list.__init__(self,t)
+                self.silent = list(t.silent)
+                return
+            if type(t)==list:
                 list.__init__(self,t)
                 return
             if type(t)==str:

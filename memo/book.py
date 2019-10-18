@@ -243,6 +243,10 @@ class Book(NotebookCloseTab):
             for t in p.note.tags:
                 if t not in marks_list:
                     marks_list.append(t)
+            if p.note.tags.silent:
+                for st in p.note.tags.silent:
+                    if st not in marks_list:
+                        marks_list.append(st)
         return marks_list
 
     def togglewrap(self):
