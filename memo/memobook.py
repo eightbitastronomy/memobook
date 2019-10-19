@@ -723,12 +723,21 @@ class Memobook:
         def default_selection(var):
             var.set("VIS")
         getter = None
-        focus = self.tabs.getnoteref(self.tabs.index("current"))
-        if not focus:
+        try:
+            focus = self.tabs.getnoteref(self.tabs.index("current"))
+        except TclError:
             messagebox.showinfo("Edit Marks Error:",
                                 "A tab must be opened before marks can be managed.")
+            return
         else:
             getter = Toplevel(self.root)
+            title_string = "Manage marks for "
+            if len(focus.title) > 32:
+                title_string += focus.title[:32] + "..."
+            else:
+                title_string += focus.title
+            getter.title(title_string)
+            print(focus.title)
         top_frame = Frame(getter)
         top_left_frame = Frame(top_frame)
         top_left_label = Label(top_left_frame,
@@ -764,7 +773,7 @@ class Memobook:
                                            width=27,
                                            selectmode="multiple")
             top_right_invis_label = Label(top_right_frame,
-                                          text="Hide and store outside of text:")
+                                          text="All hidden (not stored in text):")
             top_right_invis_dest = ListboxHV(top_right_frame,
                                              height=5,
                                              width=27,
@@ -957,7 +966,12 @@ class Memobook:
         self.menu.update()
         self.tabs.config(cursor="watch")
         self.tabs.update()
-        i = self.tabs.index("current") 
+        # the following logic avoids the exception thrown when the current index
+        # is requested but there are no tabs.
+        if self.tabs.tabs():
+            i = self.tabs.index("current")
+        else:
+            i = -1
         if i >= 0:
             self.tabs.getpageref(i).plate.config(cursor="watch")
             self.tabs.getpageref(i).plate.update()
