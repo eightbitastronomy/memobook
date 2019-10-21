@@ -30,6 +30,7 @@ import memo.empty as empty
 from memo.hscroll import ListboxHV
 from memo.binding import FileBinding, DatabaseBinding
 from memo.note import NoteMime
+from memo.config import dprint
 
 
 
@@ -61,15 +62,17 @@ class Memobook:
     
 
     def __init__(self,**kwargs):
+        dprint(3,"\nMemobook::Initializing Memobook...")
         if "ctrl" in kwargs.keys():
             try:
                 self.ctrl = extconf.load_file(kwargs["ctrl"])
             except Exception as e:
-                #print("Error loading or preparing memobook: " + str(e))
+                dprint(1,"Error loading or preparing memobook: " + str(e))
                 empty.write_skeleton_conf("conf.xml")
                 self.ctrl = extconf.load_file("conf.xml")
                 working_loc = '.'
             else:
+                dprint(3,"conf.xml found. ")
                 working_loc = str(os.path.dirname(kwargs["ctrl"]))
                 if working_loc == '':
                     working_loc == '.'
@@ -86,13 +89,14 @@ class Memobook:
             self.data = DatabaseBinding(self.ctrl)
             exc = self.data.get_last_error()
             if exc:
+                dprint(2,"Failed to open DatabaseBinding. Opening FileBinding instead. ")
                 messagebox.showinfo( "Data error","Unable to open data source: " + str(exc) )
                 self.data = FileBinding(self.ctrl)
         if "index" in kwargs.keys():
             try:
                 self.index = extconf.load_file(kwargs["index"])
             except Exception as e:
-                #print("Error loading non-text index: " + str(e))
+                dprint(1,"Error loading index.xml: " + str(e))
                 empty.write_skeleton_index("index.xml")
                 self.index = extconf.load_file("index.xml")
                 index_loc = '.'
@@ -141,6 +145,7 @@ class Memobook:
             self.tabs.bind("<Double-Button-1>",lambda e: self.tabs.newpage(None))
         self.menu = Menu(self.root)
         self.__set_bindings()
+        dprint(3,"Initialization complete. Displaying...")
         self.tabs.grid_columnconfigure(0,weight=1)
         self.tabs.grid_rowconfigure(0,weight=1)
         self.tabs.grid(sticky="nswe")
@@ -153,6 +158,7 @@ class Memobook:
 
 
     def __populate_menus( self ):
+        dprint(3,"\nMemobook::__populate_menus:: ")
         mdict = { Heading.MF:Menu(self.menu,tearoff=0),
                   Heading.ME:Menu(self.menu,tearoff=0),
                   Heading.MS:Menu(self.menu,tearoff=0),
@@ -206,6 +212,7 @@ class Memobook:
 
 
     def __set_bindings( self ):  # binding functions to keystrokes
+        dprint(3,"\nMemobook::__set_bindings:: ")
         self.root.protocol("WM_DELETE_WINDOW",lambda: self.exit_all(None))
         self.root.bind("<Control-q>",lambda e: self.exit_all(None))
         self.root.bind("<Control-w>",lambda e: self.__close_page())
@@ -220,6 +227,7 @@ class Memobook:
         ### So the following sub-function is a workaround to force the issue.
         def default_selection(var):
             var.set("or")
+        dprint(3,"\nMemobook::open_mark:: ")
         toc = list(self.data.toc())
         #toc.sort(key=lambda x: x[0]) #toc doesn't return a tuple of tuples, but a tuple of strings
         toc.sort(key=lambda x: x.lower())
@@ -256,6 +264,7 @@ class Memobook:
 
         
     def __open_mark_open( self,win,ls,logic ):  # callback function for open_mark
+        dprint(3,"\nMemobook::__open_mark_open:: ")
         if ls:
             if logic == "or":
                 notes = self.data.open_from_toc(ls)
@@ -289,6 +298,7 @@ class Memobook:
                     self.tabs.newpage(note)
             chooser.destroy()
             win.destroy()
+        dprint(3,"\nMemobook::__open_mark_confirm:: ")
         if ls:
             if logic == "or":
                 notes = self.data.open_from_toc(ls)
@@ -345,6 +355,7 @@ class Memobook:
 
 
     def __build_file_types(self):
+        dprint(3,"\nMemobook::__build_file_types:: ")
         prep_list = []
         for filetype in self.ctrl["mime"]:
             tmp_list = None
@@ -359,6 +370,7 @@ class Memobook:
 
     
     def open_file( self ):  # open by file name
+        dprint(3,"\nMemobook::open_file:: ")
         active_dir = self.data.get_active_open()
         if not active_dir:
             file_names = filedialog.askopenfilenames(initialdir=self.data.active_base(),
@@ -369,6 +381,7 @@ class Memobook:
                                                      title="Choose file(s) to open",
                                                      filetypes=self.__build_file_types())
         if file_names:
+            dprint(3,"File names from dialogue are: " + str(file_names) + ". ")
             self.data.set_active_open(os.path.dirname(file_names[0]))
             list_of_notes = self.__get_busy_with(self.data.open_note,file_names)
             for nt in list_of_notes:
@@ -376,7 +389,9 @@ class Memobook:
 
 
     def __save_note( self ):
+        dprint(3,"\nMemobook::__save_note:: ")
         index = self.tabs.index("current")
+        dprint(3,"Index is " + str(index) + ". ")
         if self.tabs.changed(index) is False:
             return
         save_nt = self.tabs.getnoteref(index)
@@ -384,12 +399,14 @@ class Memobook:
         ret_val = self.__process_save_target(save_nt,
                                              callback=lambda c:self.tabs.tab(index,text=c))
         if ( ret_val > 0 ):
+            dprint(2,"Unable to process save target. Aborting.\n")
             messagebox.showinfo("Save target error",
                                 "Unable to process save target")
             return
         if ( ret_val < 0 ) or save_nt.ID == "":
             return
         if self.data.save_note(save_nt) :
+            dprint(2,"Save error in data.save_note. Aborting.\n")
             messagebox.showinfo("Save error",
                                 "Unable to save note: " + str(self.data.get_last_error()) )
             return
@@ -397,7 +414,9 @@ class Memobook:
 
 
     def __save_note_as( self ):
+        dprint(3,"\nMemobook::__save_note_as:: ")
         index = self.tabs.index("current")
+        dprint(3,"Index is " + str(index) + ". ")
         save_nt = self.tabs.getnoteref(index)
         save_nt.body = self.tabs.getpageref(index).dump()
         if not save_nt.body:
@@ -406,12 +425,14 @@ class Memobook:
                                               saveas=True,
                                               callback=lambda c:self.tabs.tab(index,text=c))
         if ( ret_targ > 0 ):
+            dprint(2,"Unable to process save target. Aborting.\n")
             messagebox.showinfo("Save target error",
                                 "Unable to process save target")
             return
         if ( ret_targ < 0 ):
             return
         if ( self.data.save_note(save_nt) ):
+            dprint(2,"Save error in data.save_note. Aborting.\n")
             messagebox.showinfo("Save error",
                                 "Unable to save note: " + str(self.data.get_last_error()) )
             return
@@ -419,6 +440,7 @@ class Memobook:
 
 
     def __process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
+        dprint(3,"\nMemobook::__process_save_target:: Note title is " + note.title + ", saveas=" + str(saveas) + ". " )
         if note is None:
             return 1
         if (note.ID == "") or saveas:
@@ -445,9 +467,11 @@ class Memobook:
                 note.ID = name
                 note.title = os.path.basename(name)
             except Exception as e:
+                dprint(2,"Exception raised during processing of file name and saving: " + str(e))
                 return 1
             else:
                 if callback:
+                    dprint(3,"Calling callback function. ")
                     callback(note.title)
                 return 0
         else:
@@ -455,6 +479,7 @@ class Memobook:
 
 
     def __close_page( self ):
+        dprint(3,"\nMemobook::__close_page:: ")
         current = self.tabs.index("current")
         if self.tabs.changed(current):
             finish_nt = self.tabs.getnoteref(current)
@@ -495,6 +520,7 @@ class Memobook:
     
     
     def __close_all( self ):
+        dprint(3,"\nMemobook::__close_all:: ")
         for tb in self.tabs.tabs():
             i = self.tabs.index(tb)
             self.tabs.select(i)
@@ -507,6 +533,7 @@ class Memobook:
             
             
     def exit_all( self,e ):
+        dprint(3,"\nMemobook::exit_all:: ")
         for tb in self.tabs.tabs():
             i = self.tabs.index(tb)
             self.tabs.select(i)
@@ -525,6 +552,7 @@ class Memobook:
 
 
     def __font_dialogue( self ):
+        dprint(3,"\nMemobook::__font_dialogue:: ")
         def set_string_variable(var,val):
             var.set(val)
         def set_font(getter,fam,sz,wt):
@@ -618,6 +646,7 @@ class Memobook:
                                      #[destlist[j] for j in map(int,listbox.curselection())],
                                      destlist,
                                      self.tabs.getnoteref(self.tabs.index("current")))
+        dprint(3,"\nMemobook::__mark_dialogue:: ")
         getter = Toplevel(self.root)
         focus = self.tabs.getnoteref(self.tabs.index("current")) 
         if focus.mime == NoteMime.TEXT:
@@ -722,10 +751,12 @@ class Memobook:
             win.destroy()
         def default_selection(var):
             var.set("VIS")
+        dprint(3,"\nMemobook::__mark_dialogue_new:: ")
         getter = None
         try:
             focus = self.tabs.getnoteref(self.tabs.index("current"))
         except TclError:
+            dprint(1,"Error in fetching current tab from .tabs.")
             messagebox.showinfo("Edit Marks Error:",
                                 "A tab must be opened before marks can be managed.")
             return
@@ -876,16 +907,19 @@ class Memobook:
 
 
     def __mark_update_index( self, win, ls, nt ):
+        dprint(3,"\nMemobook::__mark_update_index:: ")
         self.data.update(nt,ls)
         self.__mark_store(win,ls)
 
     
     def __mark_store( self,win,ls ):  # callback function for mark_dialogue
+        dprint(3,"\nMemobook::__mark_store:: ")
         self.tabs.writetocurrent(ls)
         win.destroy()
 
 
     def __open_pop( self, hook_remove, hook_add, hook_apply ):  # populate bookmark lists
+        dprint(3,"\nMemobook::__open_pop:: ")
         manager = Toplevel(self.root)
         manager_list = ListboxHV(manager,selectmode="multiple")
         manager_items = self.ctrl["db"]["scan"]
@@ -920,6 +954,7 @@ class Memobook:
 
     
     def __open_pop_add( self,win,manlist,manitems ):  # populate button: add directory
+        dprint(3,"\nMemobook::__open_pop_add:: ")
         if manitems:
             new_dir = filedialog.askdirectory(initialdir=manitems[0],
                                               title="Choose a scan directory",
@@ -934,6 +969,7 @@ class Memobook:
 
         
     def __open_pop_remove( self,manlist,manitems ):  # populate button: remove directory
+        dprint(3,"\nMemobook::__open_pop_remove:: ")
         index_list = list(manlist.curselection())
         index_list.sort(reverse=True)
         #for index in manlist.curselection():
@@ -943,6 +979,7 @@ class Memobook:
 
         
     def __open_pop_apply( self,win,new_scan ):  # populate button: apply changes
+        dprint(3,"\nMemobook::__open_pop_apply:: ")
         self.data.clear()
         if new_scan:
             self.ctrl["db"]["scan"] = list(new_scan)
@@ -960,6 +997,7 @@ class Memobook:
         ### propagation through too many (out-of-view) tabs or, worse, might not
         ### reach the visible tab at all. The biggest negative is that if the
         ### UI is drastically changed, this function must be tailored to those changes.
+        dprint(3,"\nMemobook::__get_busy_with:: ")
         self.root.config(cursor="watch")
         self.root.update()
         self.menu.config(cursor="watch")
@@ -985,4 +1023,5 @@ class Memobook:
         
 
     def __publication_info(self):
+        dprint(3,"\nMemobook::__publication_info:: ")
         pass

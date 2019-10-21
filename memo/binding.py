@@ -10,7 +10,7 @@ import memo.parse as parse
 import memo.extconf as extconf
 from pdf2image import convert_from_path
 from memo.note import Note, NoteMime, Tag
-
+from memo.config import dprint
 
 
 class Binding():
@@ -70,6 +70,7 @@ class Binding():
 
 
 def _mime_open(fname,index=None):
+    dprint(3,'''\nDatabaseBinding::_mime_open:: "''' + str(fname) + '''"''' )
     if not fname:
         return None
     try:
@@ -77,6 +78,7 @@ def _mime_open(fname,index=None):
         m.load()
         file_type = m.file(fname)
     except Exception as e:
+        dprint(2,"Error detecting mime type: " + str(e) + " Aborting::\n")
         raise Exception(e)
     else:
         tmp_type = file_type.lower()
@@ -151,23 +153,24 @@ def _targeted_pdf(name,index=None):
 def _index_search(index,fname,note):
     try:
         target = None
-        tmp_files = index["file"]
-        if isinstance(tmp_files,extconf.Configuration):
-            if tmp_files["loc"] == fname:
-                target = tmp_files
-        else:
-            for f in tmp_files:
-                if f["loc"] == fname:
-                    target = f
-                    break
-        if target:
-            if "mark" in target.keys():
-                tmp_marks = target["mark"]
-                if isinstance(tmp_marks,str):
-                    return [tmp_marks]
-                else:
-                    return list(tmp_marks)
-        return []
+        if index and ("file" in index.keys()):
+            tmp_files = index["file"]
+            if isinstance(tmp_files,extconf.Configuration):
+                if tmp_files["loc"] == fname:
+                    target = tmp_files
+            else:
+                for f in tmp_files:
+                    if f["loc"] == fname:
+                        target = f
+                        break
+            if target:
+                if "mark" in target.keys():
+                    tmp_marks = target["mark"]
+                    if isinstance(tmp_marks,str):
+                        return [tmp_marks]
+                    else:
+                        return list(tmp_marks)
+            return []
     except Exception as e:
         raise(e)
 
@@ -580,6 +583,7 @@ class DatabaseBinding(Binding):
             
     def open_note(self,nl=[]):
         ### retrieve a note from source ###
+        dprint(3,"\nDatabaseBinding::open_note:: ")
         if not nl:
             return None
         else:
@@ -589,6 +593,7 @@ class DatabaseBinding(Binding):
             try:
                 note_list.append( _mime_open(name,self.__dex) )
             except Exception as e:
+                dprint(1,"Error in mime_open: " + str(e) + " Aborting::\n")
                 self._error.append(e)
             else:
                 continue
