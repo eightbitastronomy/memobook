@@ -9,7 +9,7 @@ TAB_SIZE=8
 
 ######## debugging/tracing ########
 
-DEBUG_PRINT=True     # activate printing of debug information
+DEBUG_PRINT=False    # activate printing of debug information
 VERBOSITY=3          # 0: no printing;
                      # 1: Exception-error printing
                      # 2: Additional error and other priority printing

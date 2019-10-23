@@ -768,8 +768,7 @@ class Memobook:
             else:
                 title_string += focus.title
             getter.title(title_string)
-            print(focus.title)
-        top_frame = Frame(getter)
+            top_frame = Frame(getter)
         top_left_frame = Frame(top_frame)
         top_left_label = Label(top_left_frame,
                                text="Marks from open notes:")
