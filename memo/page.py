@@ -132,7 +132,7 @@ class ImagePage(Page):
         ### 'append' for Image is actually a 'replace' action
         self.note.tags = note.Tag()
         for item in mtrl:
-            self.note.tags.append(str(item))
+            self.note.tags.silent.append(str(item))
 
 
 class PDFPage(Page):
@@ -154,4 +154,4 @@ class PDFPage(Page):
         ### 'append' for Image is actually a 'replace' action
         self.note.tags = note.Tag()
         for item in mtrl:
-            self.note.tags.append(str(item))
+            self.note.tags.silent.append(str(item))
