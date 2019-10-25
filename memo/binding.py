@@ -641,7 +641,7 @@ class DatabaseBinding(Binding):
     def save_note(self,nt):
         ### write a note to the source ###
         if nt is None:
-            e = Exception("set_save_as argument requires note object")
+            e = Exception("save_note argument requires note object")
             self._error.append(e)
             return True
         if nt.mime is not NoteMime.TEXT:
@@ -669,6 +669,29 @@ class DatabaseBinding(Binding):
             return True
         else:
             return False
+
+    def save_note_nowrite(self,nt):
+        ### write note information to the source without writing note.body to memory ###
+        if nt is None:
+            e = Exception("save_note_nowrite argument requires note object")
+            self._error.append(e)
+            return True
+        if nt.mime is not NoteMime.TEXT:
+            # silent fail: writing is not supported for images or pdfs
+            ### here i must implement xml tag rewrite for any changes in marks to the image/pdf/whatever ###
+            return False
+        ### compare/update marks ###
+        self.__cursor.execute('''select rowid,mark from bookmarks where file=?''',(nt.ID,))
+        db_hits = self.__cursor.fetchall()
+        for item in db_hits:
+            if not (item[1] in nt.tags):
+                self.__cursor.execute('''delete from bookmarks where rowid=?''',(item[0],))
+        self._src.commit()
+        for tag in nt.tags:
+            if not (tag in [ item[1] for item in db_hits ]):
+                self.__cursor.execute('''insert into bookmarks (mark,file,type) values (?,?,?)''',(tag,nt.ID,nt.mime.value))
+        self._src.commit()
+        return False
 
     def close_note(self):
         ### if applicable, close a note; could mean clearing some pointers ###
