@@ -6,7 +6,7 @@
 
 import base64
 import io
-from tkinter import ttk
+from tkinter import ttk, BooleanVar,StringVar
 from PIL import Image as im
 from PIL import ImageTk
 from memo.note import NoteMime
@@ -118,12 +118,20 @@ class Book(NotebookCloseTab):
     _save_hook = None   # save page callback fctn
     _close_hook = None  # close page callback fctn
     _ctrl = None        # Configuration pointer
+    __show_search = "stop"  # toggle for search bar; used for tabs created after search is started
+    __search_phrase = None
+    __search_subst = None
+    __search_case = None
 
     def __init__(self,*args,**kwargs):
         if "ruling" in kwargs:
             self._ctrl = kwargs["ruling"]
             del kwargs["ruling"]
         NotebookCloseTab.__init__(self,*args,**kwargs)
+        self.__search_case = BooleanVar()
+        self.__search_phrase = StringVar()
+        self.__search_subst = StringVar()
+        self.bind("<<NotebookTabChanged>>",lambda e:self.__switched_tabs())
         if self._ctrl:
             self.__blanktext(None)
             self.__ready(self._pgs[0])
@@ -137,11 +145,22 @@ class Book(NotebookCloseTab):
     def set_close_hook(self, ch):
         self._close_hook = ch
 
+    def __switched_tabs(self):
+        if self.__show_search == "start":
+            self._pgs[self.index("current")].set_search()
+
     def __blanktext(self,event):
         if (event is None) or (self.identify(event.x, event.y) == ""):
             self._l += 1
-            newpg = TextPage(self)
-            newpg.set_font(self._ctrl["font"]["family"],self._ctrl["font"]["size"],self._ctrl["font"]["weight"])
+            newpg = TextPage(self,
+                             hook=lambda: self.toggle_search(),
+                             search=self.__show_search,
+                             case=self.__search_case,
+                             phrase=self.__search_phrase,
+                             subst=self.__search_subst)
+            newpg.set_font(self._ctrl["font"]["family"],
+                           self._ctrl["font"]["size"],
+                           self._ctrl["font"]["weight"])
             if self._ctrl:
                 newpg.toggle_wrap(self._ctrl["wrap"])
             self._pgs.append( newpg )
@@ -171,8 +190,16 @@ class Book(NotebookCloseTab):
         # make a new page based on mime-type
         newpg = None
         if nt.mime == NoteMime.TEXT:
-            newpg = TextPage(self,note=nt)
-            newpg.set_font(self._ctrl["font"]["family"],self._ctrl["font"]["size"],self._ctrl["font"]["weight"])
+            newpg = TextPage(self,
+                             note=nt,
+                             hook=lambda: self.toggle_search(),
+                             search=self.__show_search,
+                             case=self.__search_case,
+                             phrase=self.__search_phrase,
+                             subst=self.__search_subst)
+            newpg.set_font(self._ctrl["font"]["family"],
+                           self._ctrl["font"]["size"],
+                           self._ctrl["font"]["weight"])
             if self._ctrl:
                 newpg.toggle_wrap(self._ctrl["wrap"])
         if nt.mime == NoteMime.IMAGE:
@@ -263,6 +290,38 @@ class Book(NotebookCloseTab):
                 self._ctrl["wrap"] = "word"
         for p in self._pgs:
             p.toggle_wrap(self._ctrl["wrap"])
+
+    def show_search(self):
+        self.__show_search = "start"
+        for p in self._pgs:
+            p.toggle_search("start")
+
+    def kill_search(self):
+        self.__show_search = "stop"
+        for p in self._pgs:
+            p.toggle_search("stop")
+
+    def toggle_search(self,val=None):
+        if val:
+            if val == "start":
+                self.__show_search = "start"
+                for p in self._pgs:
+                    p.start_search()
+                return "break"
+            if val == "stop":
+                self.__show_search = "stop"
+                for p in self._pgs:
+                    p.stop_search()
+                return "break"
+        if self.__show_search == "start":
+            self.__show_search = "stop"
+            for p in self._pgs:
+                p.stop_search()
+        else:
+            self.__show_search = "start"
+            for p in self._pgs:
+                p.start_search()
+        return "break"
 
     def set_page_font(self,fam,sz,wt):
         for p in self._pgs:
