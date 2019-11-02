@@ -7,6 +7,8 @@ let g:loaded_memo = 1
 let s:cpo_save = &cpo
 set cpo&vim
 
+let b:smarks = ""
+
 
 " Remapping the 'down a line' command also remaps <CR>.
 " This is unavoidable, so I should find a different method.
@@ -17,6 +19,8 @@ nmap <silent> <c-m> :call Interface()<CR>
 " nmap <silent> <c-@> :call Interface()<CR>
 
 
+" Each case has been moved to its own function; this way command-mappings
+" can be made for each functionality if so desired.
 function! Interface()
     echo ""
     let c = nr2char(getchar())
@@ -24,39 +28,24 @@ function! Interface()
         " intercept write and store marks
         call Write(expand('%:p'),"1")
     elseif c == "e"
-        " get files by marks (OR)
-        let marks = input("Marks(any): ")
-	let marklist = []
-	if !empty(marks) 
-		if !empty(matchstr(marks,","))
-			let marklist = split(marks,",")
-		else
-			let marklist = split(marks)
-		endif
-	else
-		return
-	endif
-	echo ""
-	if !empty(marklist)
-		let flist = Edit(marklist,0)
-		exe bufnr("Memo: File hits",1)."buffer"
-		call append(0,flist)
-	endif
-        " use new buffer to choose files to open (maybe a quickbuffer?)
+	" Edit/Read files: marks will be ORed together
+	    call Edit(0)
     elseif c == "E"
-        " get files by marks (AND)
-        let marks = input("Marks(all): ")
-        let flist = Edit(marks,0)
-        " use new buffer to choose files to open (maybe a quickbuffer?)
+	" Edit/Read files: marks will be ANDed together
+	    call Edit(1)
     elseif c == "m"
         " add silent marks
 	" these must be buffer-local and Savetodb must send them to db
+	" what about MANAGING the silent marks?
 	let marks = ""
 	let bid = bufname("%")
 	if bid == ""
 	    let bid = "buffer " . bufnr()
 	endif
-	let marks = input("Silent(" . bid . "): ")	
+	let marks = input("Silent(" . bid . "): ")
+	let b:smarks = Splitmarks(marks)
+    elseif c == "M"
+	echo b:smarks
     elseif c == "s"
         " scan directories
     else
@@ -64,6 +53,39 @@ function! Interface()
 	call cursor(cp[1]+1,cp[2])
     endif
     return
+endfunction
+
+
+function! ParseNumberList(numbers)
+    if a:numbers == ""
+	    return []
+    endif
+    let choices = []
+    let segments = split(a:numbers,",")
+    for segment in segments
+	let sbuffer = split(segment," ")
+	if len(sbuffer) > 1
+		return []
+	endif
+	let sbuffer = split(sbuffer[0],"-")
+	if len(sbuffer) == 1
+		if sbuffer[0] =~ "[0-9]*"
+			call add(choices,str2nr(sbuffer[0])-1)
+		endif
+	elseif len(sbuffer) > 2
+		return []
+	else
+		let startint = str2nr(sbuffer[0])
+		let stopint = str2nr(sbuffer[1])
+		if (startint =~ "[0-9]*") && (stopint =~ "[0-9]*")
+			while startint <= stopint
+				call add(choices,startint-1)
+				let startint += 1
+			endwhile
+		endif
+	endif
+    endfor
+    return choices
 endfunction
 
 
@@ -85,6 +107,7 @@ endfunction
 
 function! Write(filename,filetype)
     call Savetodb(a:filename,a:filetype)
+    "call Savesilentmarks(a:filename, ...)
     write
 endfunction
 
@@ -123,9 +146,74 @@ function! Savetodb(filename,filetype)
 endfunction
 
 
-function! Edit(mk,logic)
+function! Edit(logic)
+	" get files by marks (OR)
 	if a:logic == 0
-		let tuplelist = []
+        	let marks = input("Marks(any): ")
+	elseif a:logic == 1
+		let marks = input("Marks(all): ")
+	else
+		return
+	endif
+	let marklist = Splitmarks(marks)
+	echo ""
+	if !empty(marklist)
+		let flist = RetrieveFilesList(marklist,a:logic)
+		if empty(flist)
+			return
+		endif
+		let i = 1
+		echo "\n"
+		for fname in flist
+			echon i ". " fname "\n"
+			let i += 1
+		endfor
+		let resp = input("Please enter choice (ex: 1,2,3-6,10 or nothing): ")
+		let answerlist = ParseNumberList(resp)
+		if empty(answerlist)
+			return
+		endif
+		let curbuf = bufnr()
+		if len(answerlist) == 1 
+			let path = get(flist,answerlist[0],"")
+			if path != ""
+				exec ":view " . flist[answerlist[0]]
+			endif
+		else
+			for answer in answerlist
+				let path = get(flist,answer,"")
+				if path != ""
+					exec ":view " . flist[answer]
+				endif
+			endfor
+		endif
+		exec ":b " . curbuf
+	endif
+endfunction
+
+
+function! Managesilentmarks()
+endfunction
+
+
+function! Splitmarks(inputstring)
+    if !empty(a:inputstring) 
+	if !empty(matchstr(a:inputstring,","))
+	    return split(a:inputstring,",")
+	else
+	    return split(a:inputstring)
+	endif
+    else
+	return []
+    endif
+endfunction
+
+
+function! RetrieveFilesList(mk,logic)
+	let tuplelist = []
+	let filelist = []
+	if a:logic == 0
+		" OR
 		for item in a:mk
 			let retlist = Filesbymark(item)
 			if !empty(retlist)
@@ -139,14 +227,56 @@ function! Edit(mk,logic)
 		if empty(tuplelist)
 			return []
 		endif
-		let filelist = []
 		for t in tuplelist
 			call add(filelist,t[1])
 		endfor
-		return filelist
 	else
-		return []
+		" AND
+		let n = len(a:mk)
+		for item in a:mk
+			let retlist = Filesbymark(item)
+			if !empty(retlist)
+				if len(retlist) > 1
+					call extend(tuplelist,retlist)
+				else
+					call add(tuplelist,retlist[0])
+				endif
+			else
+				let n -= 1
+			endif
+		endfor
+		if empty(tuplelist)
+			return []
+		endif
+		" All lists have been combined and checked for emptiness.
+		" If a file exists in an intersection of n lists, it will
+		" appear n times in tuplelist.
+		let pathlist = []
+		for tuple in tuplelist
+			call add(pathlist,tuple[1])
+		endfor
+		while 1
+			if len(pathlist) < 1
+				break
+			endif
+			let possible = pathlist[0]
+			if count(pathlist,possible) == n
+				call add(filelist,possible)
+			endif
+			while 1
+				let j = index(pathlist,possible)
+				if j < 0
+					break
+				endif
+				call remove(pathlist,j)
+			endwhile
+		endwhile
 	endif
+	return filelist
+endfunction
+
+
+function! Savesilentmarks(fname,marks)
 endfunction
 
 

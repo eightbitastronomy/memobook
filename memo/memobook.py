@@ -185,6 +185,9 @@ class Memobook:
         mdict[Heading.MF].add_separator()
         mdict[Heading.MF].add_command(label="Quit",
                                       command=lambda: self.exit_all(None))
+        mdict[Heading.ME].add_command(label="Find/Replace",
+                                      #command=lambda: self.__mark_dialogue(self.__mark_store))
+                                      command=lambda: self.tabs.toggle_search("start"))
         mdict[Heading.ME].add_command(label="Edit marks",
                                       #command=lambda: self.__mark_dialogue(self.__mark_store))
                                       command=lambda: self.__mark_dialogue_new())
@@ -214,6 +217,7 @@ class Memobook:
     def __set_bindings( self ):  # binding functions to keystrokes
         dprint(3,"\nMemobook::__set_bindings:: ")
         self.root.protocol("WM_DELETE_WINDOW",lambda: self.exit_all(None))
+        self.root.bind("<Control-f>",lambda e: self.tabs.toggle_search())
         self.root.bind("<Control-q>",lambda e: self.exit_all(None))
         self.root.bind("<Control-w>",lambda e: self.__close_page())
         self.root.bind("<Control-n>",lambda e: self.tabs.newpage(None))
@@ -347,7 +351,7 @@ class Memobook:
                                        command=lambda: chooser.destroy())
                 chooser_list.pack(side="bottom")
                 chooser_banner.pack(side="top")
-                chooser_frame.pack(side="top")
+                chooser_frame.pack(side="top",fill="both",expand="true")
                 button_cancel.pack(side="left")
                 button_open_all.pack(side="left")
                 button_open.pack(side="right")
@@ -549,7 +553,7 @@ class Memobook:
         if isinstance(self.index,extconf.Configuration):
             self.index.print_config(str(self.ctrl["index"]+os.sep+"index.xml"))
         self.root.destroy()
-
+        
 
     def __font_dialogue( self ):
         dprint(3,"\nMemobook::__font_dialogue:: ")
@@ -621,11 +625,11 @@ class Memobook:
         label_size.pack(anchor="w")
         label_weight.pack(anchor="w")
         label_frame.pack(side="left")
-        choice_family.pack(anchor="w")
-        choice_size.pack(anchor="w")
-        choice_weight.pack(anchor="w")
-        choice_frame.pack(side="left")
-        display_frame.pack(side="top")
+        choice_family.pack(anchor="w",fill="x",expand="true")
+        choice_size.pack(anchor="w",fill="x",expand="true")
+        choice_weight.pack(anchor="w",fill="x",expand="true")
+        choice_frame.pack(side="left",expand="true",fill="x")
+        display_frame.pack(side="top",expand="true",fill="both")
         finish_cancel.pack(side="left")
         finish_apply.pack(side="right")
         finish_frame.pack(side="bottom")
@@ -793,8 +797,8 @@ class Memobook:
                                       text="Cancel",
                                       command=lambda: getter.destroy())
         top_left_label.pack(side="top",anchor="n")
-        top_left_getter.pack(side="bottom",anchor="w")
-        top_left_frame.pack(side="left")            
+        top_left_getter.pack(side="bottom",anchor="w",expand="true",fill="both")
+        top_left_frame.pack(side="left",expand="true",fill="both")            
         if focus.mime == NoteMime.TEXT:
             top_right_vis_label = Label(top_right_frame,
                                         text="Store in text (append to end):")
@@ -856,9 +860,9 @@ class Memobook:
             top_cent_remove_vis.pack(side="bottom")
             top_cent_add_vis.pack(side="bottom")
             top_right_vis_label.pack(side="top",anchor="n")
-            top_right_vis_dest.pack(side="top",anchor="w")
+            top_right_vis_dest.pack(side="top",anchor="w",fill="both",expand="true")
             top_right_invis_label.pack(side="top",anchor="n")
-            top_right_invis_dest.pack(side="top",anchor="w")
+            top_right_invis_dest.pack(side="top",anchor="w",fill="both",expand="true")
             bottom_middle_label.pack(side="left",anchor="w")
             bottom_middle_enter.pack(side="left",anchor="w",fill="x",expand="true")
             bottom_middle_radio_VIS.pack(side="left",anchor="w")
@@ -891,18 +895,18 @@ class Memobook:
             top_cent_remove_invis.pack(side="bottom")
             top_cent_add_invis.pack(side="bottom")
             top_right_invis_label.pack(side="top",anchor="n")
-            top_right_invis_dest.pack(side="top",anchor="w")
+            top_right_invis_dest.pack(side="top",anchor="w",fill="both",expand="true")
             bottom_middle_label.pack(side="left",anchor="w")
             bottom_middle_enter.pack(side="left",anchor="w",fill="x",expand="true")
             bottom_middle_add.pack(side="right",anchor="w")
         top_cent_frame.pack(side="left")
-        top_right_frame.pack(side="left")
-        top_frame.pack(side="top")
+        top_right_frame.pack(side="left",fill="both",expand="true")
+        top_frame.pack(side="top",fill="both",expand="true")
         bottom_bottom_apply.pack(side="left")
         bottom_bottom_cancel.pack(side="right")
         bottom_bottom_frame.pack(side="bottom")
-        bottom_middle_frame.pack(side="bottom",anchor="w")
-        bottom_frame.pack(side="bottom")
+        bottom_middle_frame.pack(side="bottom",anchor="w",fill="x",expand="true")
+        bottom_frame.pack(side="bottom",fill="x",expand="true")
 
 
     def __mark_update_index( self, win, ls, nt ):
