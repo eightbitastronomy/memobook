@@ -246,7 +246,7 @@ class Memobook:
         self.root.bind("<Control-w>",lambda e: self.__close_page())
         self.root.bind("<Control-n>",lambda e: self.tabs.newpage(None))
         self.root.bind("<Control-s>",lambda e: self.__save_note())
-        self.root.bind("<Alt-m>",lambda e: self.__mark_dialogue(self.__mark_store))
+        self.root.bind("<Alt-m>",lambda e: self.__mark_dialogue_new())
 
 
     def open_mark( self, callback ):  # open by mark
