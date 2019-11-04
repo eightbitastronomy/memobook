@@ -1,3 +1,30 @@
+###############################################################################################
+#  memobook.py: the GUI object that runs the show
+#
+#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
+#  Copyrighted by eightbitastronomy, 2019.
+#
+#  License information:
+#
+#  This file is a part of Memobook Note Suite.
+#
+#  Memobook Note Suite is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 3
+#  of the License, or (at your option) any later version.
+#
+#  Memobook Note Suite is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+###############################################################################################
+
+
+
 '''Memobook class file: the frontend and control structure for the application.
    Configuration values are in config.py or loaded via extconf.py.
    Database is handled in binding.py.'''
@@ -186,12 +213,9 @@ class Memobook:
         mdict[Heading.MF].add_command(label="Quit",
                                       command=lambda: self.exit_all(None))
         mdict[Heading.ME].add_command(label="Find/Replace",
-                                      #command=lambda: self.__mark_dialogue(self.__mark_store))
                                       command=lambda: self.tabs.toggle_search("start"))
         mdict[Heading.ME].add_command(label="Edit marks",
-                                      #command=lambda: self.__mark_dialogue(self.__mark_store))
                                       command=lambda: self.__mark_dialogue_new())
-        mdict[Heading.ME].add_separator()
         mdict[Heading.ME].add_command(label="Font",
                                       command=lambda: self.__font_dialogue())
         mdict[Heading.ME].add_separator()
@@ -203,7 +227,7 @@ class Memobook:
                                           variable=self.ctrl["wrap"],
                                           command=lambda: self.tabs.togglewrapall())
         mdict[Heading.MS].add_command(label="Scan",
-                                      command=lambda: self.__get_busy_with(self.data.populate))
+                                      command=lambda: self.__get_busy_with(None,self.data.populate))
         mdict[Heading.MS].add_command(label="Clear",
                                       command=lambda: self.data.clear())
         mdict[Heading.MS].add_command(label="Manage locations",
@@ -305,9 +329,9 @@ class Memobook:
         dprint(3,"\nMemobook::__open_mark_confirm:: ")
         if ls:
             if logic == "or":
-                notes = self.data.open_from_toc(ls)
+                notes = self.__get_busy_with(win,self.data.open_from_toc,ls)
             elif logic == "and":
-                notes = self.data.open_from_toc_intersection(ls)
+                notes = self.__get_busy_with(win,self.data.open_from_toc_intersection,ls)
             else:
                 notes = []
             if not notes:
@@ -387,7 +411,7 @@ class Memobook:
         if file_names:
             dprint(3,"File names from dialogue are: " + str(file_names) + ". ")
             self.data.set_active_open(os.path.dirname(file_names[0]))
-            list_of_notes = self.__get_busy_with(self.data.open_note,file_names)
+            list_of_notes = self.__get_busy_with(None,self.data.open_note,file_names)
             for nt in list_of_notes:
                 self.tabs.newpage(nt)
 
@@ -945,7 +969,7 @@ class Memobook:
                          command=lambda: hook_add(manager,manager_list,manager_items) )
         appbutt = Button(buttons,
                          text="Apply",
-                         command=lambda: self.__get_busy_with(hook_apply,manager,manager_items) )
+                         command=lambda: self.__get_busy_with(None,hook_apply,manager,manager_items) )
         rembutt.grid(row=1,column=0)
         addbutt.grid(row=1,column=1)
         appbutt.grid(row=1,column=2)
@@ -992,7 +1016,7 @@ class Memobook:
         win.destroy()
 
 
-    def __get_busy_with(self, fctn, *args):  # wrapper to invoke mouse busy icon
+    def __get_busy_with(self, optionalwin, fctn, *args):  # wrapper to invoke mouse busy icon
         ### Example of use: for a call, buff = f(arg1,arg2,arg3), use
         ### buff = self.__get_busy_with(f,arg1,arg2,arg3)
         ### The choice was made not to recursively propagate through self.root
@@ -1007,6 +1031,9 @@ class Memobook:
         self.menu.update()
         self.tabs.config(cursor="watch")
         self.tabs.update()
+        if optionalwin:
+            optionalwin.config(cursor="watch")
+            optionalwin.update()
         # the following logic avoids the exception thrown when the current index
         # is requested but there are no tabs.
         if self.tabs.tabs():
@@ -1020,6 +1047,8 @@ class Memobook:
         self.root.config(cursor="")
         self.menu.config(cursor="")
         self.tabs.config(cursor="")
+        if optionalwin:
+            optionalwin.config(cursor="")
         if i >= 0:
             self.tabs.getpageref(i).plate.config(cursor="")
         return retval

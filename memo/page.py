@@ -1,4 +1,31 @@
+###############################################################################################
+#  page.py: Page, TextPage, ImagePage, and PDFPage for book.py
+#
+#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
+#  Copyrighted by eightbitastronomy, 2019.
+#
+#  License information:
+#
+#  This file is a part of Memobook Note Suite.
+#
+#  Memobook Note Suite is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 3
+#  of the License, or (at your option) any later version.
+#
+#  Memobook Note Suite is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+###############################################################################################
+
+
 '''Page classes for Memobook'''
+
 
 import enum
 import tkinter
@@ -8,22 +35,6 @@ import memo.note as note
 from memo.imagecanvas import ImageCanvas
 from memo.pdfcanvas import PDFCanvas
 
-
-#class SimpleQueue(list):
-#    pointer = -1
-#    last = -1
-#    def __init__(self,q=None):
-#        if q:
-#            list.__init__(self,q)
-#            self.pointer = q.pointer
-#            self.last = q.last
-#        else:
-#            list.__init__(self)
-#    def push(self,item):
-#        self.append(item)
-#        last += 1
-#    def pop(self,
-        
 
 
 class State(enum.Enum):

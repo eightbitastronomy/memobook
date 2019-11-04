@@ -1,5 +1,6 @@
-memobook, author: eightbitastronomy
-license: see file, LICENSE, provided with source code.
+Memobook Note Suite
+Author: eightbitastronomy
+License: see file, LICENSE, provided with source code.
 
 A notepad/texteditor derivative for people who don't want to remember everything ever.
  -   If you commonly write down things you've learned in plain text files -- because there's just too much to remember --
@@ -29,6 +30,10 @@ Configuration details:
  -   Probably, the only global variable of concern is TAG_MARKER located in config.py. It was chosen to be "@@" because in normal, everyday literature, "@@" is not a commonly used punctuation. In html, e.g., "@@" might not be so uncommon. If you would rather use a different marker, change it.  But this doesn't magically change the markers in files you've already made...
  -   most other configuration values are found in conf.xml.
  -   Image marks & details are stored in index.xml.
+
+Forthcoming:
+ -   Vi/Vim plugin
+ -   Emacs extension
 
 Future tasks:
  -   remove mime storage in database if it isn't useful
