@@ -493,10 +493,15 @@ class DatabaseBinding(Binding):
     def populate(self):
         if not self._src:
             return
-        if isinstance(self.__ctrl["db"]["scan"],str):
-            self.__scan_list = [ self.__ctrl["db"]["scan"] ]
-        else:
-            self.__scan_list = list(self.__ctrl["db"]["scan"])
+        try:
+            if isinstance(self.__ctrl["db"]["scan"],str):
+                self.__scan_list = [ self.__ctrl["db"]["scan"] ]
+            else:
+                self.__scan_list = list(self.__ctrl["db"]["scan"])
+        except:
+            newc = extconf.Configuration(self.__dex.getdoc())
+            extconf.fill_configuration(newc,"db",members={"scan":"."})
+            extconf.attach_configuration(self.__dex,"db",newc)
         if self.__scan_list:
             for dir_name in self.__scan_list:
                 self.__delve(pathlib.Path(dir_name))
