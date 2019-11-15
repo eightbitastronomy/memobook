@@ -50,12 +50,12 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Emacs: under construction.
 
 ## For the future:
- [ ]  Finish the Emacs extension
- [ ]  Fix UTF-associated problems for text files
- [ ]  Remove Python-dependency in Vim extension
- [ ]  Do whatever needs to be done for portions of this suite to run on just about any Windows, MacOS, BSD, or Linux system.
- [ ]  Better handling of what is a text file and what is not.
- [ ]  Resolve malfunction of global Tk theme changes.
+ - [ ]  Finish the Emacs extension
+ - [ ]  Fix UTF-associated problems for text files
+ - [ ]  Remove Python-dependency in Vim extension
+ - [ ]  Do whatever needs to be done for portions of this suite to run on just about any Windows, MacOS, BSD, or Linux system.
+ - [ ]  Better handling of what is a text file and what is not.
+ - [ ]  Resolve malfunction of global Tk theme changes.
 
 Author: eightbitastronomy
 
