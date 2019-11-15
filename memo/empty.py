@@ -98,8 +98,8 @@ def write_skeleton_conf(filepath):
     <open>.</open>
     <loc>.</loc>
     <index>.</index>
-    <x>919</x>
-    <y>448</y>
+    <x>200</x>
+    <y>200</y>
   </configuration>''')
 
 

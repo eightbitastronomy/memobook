@@ -13,9 +13,10 @@ import argparse
 
 def parse_command_line(filetest):
     parser = argparse.ArgumentParser()
-    group_action = parser.add_mutually_exclusive_group(required=True)
-    group_logic = parser.add_mutually_exclusive_group(required=False)
-    parser.add_argument("-r","--source",default="archive.db",help="Path to data source",metavar="")
+    #group_action = parser.add_mutually_exclusive_group(required=True)
+    #group_logic = parser.add_mutually_exclusive_group(required=False)
+    parser.add_argument("-b","--basedir",default=".",help="Path to memobook",metavar="")
+    parser.add_argument("-s","--source",default="",help="Path to data source",metavar="")
     parser.add_argument("-c","--ctrl",default="conf.xml",help="Path to control/configuration XML",metavar="")
     #parser.add_argument("-f","--file",default=None,help="File name for save/store operation",metavar="")
     #parser.add_argument("-i","--identifiers",default=None,help="Identifiers (marks, files, or dirs) in comma-separated list",metavar="")
@@ -26,7 +27,8 @@ def parse_command_line(filetest):
     #group_action.add_argument("-l","--lookupmark",action="store_true",help="Lookup: retrieve file names based on marks")
     #group_action.add_argument("-L","--lookupname",action="store_true",help="Lookup: retrieve marks based on file name")
     #group_action.add_argument("-t","--toc",action="store_true",help="Table of Contents: retrieve all marks")
-    group_action.add_argument("-p","--populate",action="store_true",help="Populate: scan directories for marks")
+    #group_action.add_argument("-p","--populate",action="store_true",help="Populate: scan directories for marks")
+    parser.add_argument("-p","--populate",action="store_true",help="Populate: scan directories for marks")
     #group_action.add_argument("-d","--readdirs",action="store_true",help="Retrieve scan directories")
     ##group_action.add_argument("-D","--setdirs",help="Set scan directories, comma-separated list (erases previous)")
     #group_action.add_argument("-D","--setdirs",action="store_true",help="Set scan directories, comma-separated list (erases previous)")
@@ -92,37 +94,54 @@ else:
 #data.close()
 
 
+base = guide.basedir + os.sep
+target_ctrl = ""
+target_src = ""
+alt_source = False
+
+
+if guide.ctrl == "conf.xml":
+    target_ctrl = base + guide.ctrl
+else:
+    target_ctrl = guide.ctrl
+if guide.source == "":
+    target_src = base + "archive.db"
+else:
+    target_src = guide.source
+    alt_source = True
+
+    
 try:
-    ctrl = extconf.load_file(guide.ctrl)
+    ctrl = extconf.load_file(target_ctrl)
 except Exception as e:
     dprint(1,"Error loading or preparing memobook: " + str(e))
-    empty.write_skeleton_conf("conf.xml")
-    ctrl = extconf.load_file("conf.xml")
+    target_ctrl = "./conf.xml"
+    empty.write_skeleton_conf(target_ctrl)
+    ctrl = extconf.load_file(target_ctrl)
     ctrl["loc"]='.'
+
+
+if not alt_source:
+    target_src = ctrl["db"]["src"]
 
 
 db = DatabaseBinding(ctrl)
 exc = db.get_last_error()
 if exc:
-    dprint(2,"Failed to open DatabaseBinding (" + guide.source + ") with error: " + str(exc) )
-    print("Failed to open DatabaseBinding.")
+    dprint(2,"Failed to open DatabaseBinding (" +target_ctrl + ") with error: " + str(exc))
+    print("Failed to open DatabaseBinding (" +target_ctrl + ") with error: " + str(exc))
     sys.exit(-1)
-if guide.source != ctrl["db"]["src"]:
-    print(guide.source, "vs", ctrl["db"]["src"])
-    db.set_source(guide.source)
-    exc = db.get_last_error()
-    if exc:
-        dprint(2,"Failed to set DatabaseBinding  source(" + guide.source + ") with error: " + str(exc) )
-        print("Failed to set DatabaseBinding source.")
-        sys.exit(-1)
-db.set_index(extconf.load_file("index.xml"))
-        
+db.set_index(extconf.load_file(ctrl["index"]))
+
 if guide.populate:
     db.clear()
     db.populate()
     sys.exit(0)
 
 sys.exit()
+
+
+### nothing after is reached. Have to decide how much functionality memo-daemon will have. ###
     
 if guide.save:
     name = ""

@@ -419,22 +419,29 @@ class DatabaseBinding(Binding):
     __dex = None
     
     def __init__(self,ctrl):
+        dprint(3,"\nDatabaseBinding::init")
         self.__ctrl = ctrl
-        self.__db_name = str(ctrl["loc"]+os.sep+ctrl["db"]["src"])
+        #the following assumes a relative path, but the config script will
+        #use an absolute one so that the user may call memobook from any PWD
+        #self.__db_name = str(ctrl["loc"]+os.sep+ctrl["db"]["src"])
+        self.__db_name = ctrl["db"]["src"]
         try:
             self._src = sqlite3.connect(self.__db_name)
         except Exception as e:
+            dprint(1,"\nDatabaseBinding::init: cannot connect to database")
             self._error.append(e)
         else:
             self.__load_table()
 
     def set_source(self,db):
+        dprint(3,"\nDatabaseBinding::set_source")
         if self._src:
             self._src.close()
         try:
             self.__db_name = db
             self._src = sq3lite.connect(db)
         except Exception as e:
+            dprint(1,"\nDatabaseBinding::set_source: cannot connect to database")
             self._error.append(e)
             return True
         else:
@@ -442,6 +449,7 @@ class DatabaseBinding(Binding):
             return False
 
     def __load_table(self):
+        dprint(3,"\nDatabaseBinding::__load_table")
         try:
             self.__cursor = self._src.cursor()
             self.__cursor.execute('''select * from sqlite_master where type="table" and name="bookmarks"''',)
@@ -449,6 +457,7 @@ class DatabaseBinding(Binding):
                 self.__cursor.execute('''create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);''')
                 self._src.commit()
         except Exception as e:
+            dprint(1,"\nDatabaseBinding::__load_table: error executing, fetching, committing.")
             self._error.append(e)
 
     def get_last_error(self):
@@ -461,6 +470,7 @@ class DatabaseBinding(Binding):
         self.__dex = dex
         
     def __load_index(self):
+        dprint(3,"\nDatabaseBinding::__load_index")
         try:
             files = self.__dex["file"]
         except:
@@ -491,6 +501,7 @@ class DatabaseBinding(Binding):
         self._src.commit()
         
     def populate(self):
+        dprint(3,"\nDatabaseBinding::populate")
         if not self._src:
             return
         try:
@@ -544,6 +555,7 @@ class DatabaseBinding(Binding):
             self._error.append(wrapper)
             return
         marks = parse.parse(handle_text)
+        dprint(4," MARKS: " + ", ".join(marks))
         for m in marks:
             self.__cursor.execute('''SELECT mark,file FROM bookmarks WHERE mark=? AND file=? AND type=?''',(m,str(f),NoteMime.TEXT.value))
             hit_list = self.__cursor.fetchall()
@@ -557,6 +569,7 @@ class DatabaseBinding(Binding):
         file_tree = os.listdir(directory)
         for s in file_tree:
             f = pathlib.Path(directory / pathlib.Path(s))
+            dprint(3,"\nDatabaseBinding::__delve:FILE " + str(f))
             if ( f.is_symlink() ):
                 link_result = pathlib.Path(os.path.realpath(f))
                 if link_result.is_file():

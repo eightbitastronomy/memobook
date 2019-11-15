@@ -13,29 +13,42 @@ Memobook:
  -   Written in Python 3; requires tkinter, sqlite3, pillow, and poppler libraries. Pillow (PIL) version 6+ (I think) -- must have ImageTk.
  -   Class Memobook is the application, but pad.sh is a short script to launch it. Alternatively, launch it via pad.py.
 
-Usage:
- -   Write notes as you go, but store them as .txt text files. At the end of your file, type up a few "marks" which basically serve to hashtag your file. Use the tag-marker designated in config.py. Example, for "@@": @@readme @@help @@memobook
- -   Set & scan the folder(s) where you intend to keep your notes. Done. Use as normal.
- -   For images, once you've opened them and inserted a few marks (which won't alter the image file), you can search for images in the same way as texts.
+The windowed GUI:
+ -  Is written in Python 3; requires tkinter, pillow, and poppler libraries. Pillow (PIL) version 6+ (I think) -- must have ImageTk.
+ -  As far as I know, the poppler dependency is the reason this portion of the suite won't run on Windows.
 
-Further usage detail:
- -   Certainly on a -nix system you could just grep particular keywords. But why do we continue to code and code and code if not to make tasks easier than they were before? Additionally, grep isn't the most helpful tool when it comes to images and pdfs...
- -   Memobook is opened with pad.sh or pad.py, unless you're using a pyinstaller package (in which case, the file to look for is Memobook).
- -   You can set the directories containing your notes under "Sources." "Scan" will update the memobook's marks. Once memobook has found marked files, you can open them by mark alone. Or, open files the traditional way -- by an open-file dialogue.
- -   For convenience, under Edit->Insert Mark, you can gather all the marks found in open text files, select the ones you want, and add them to the end of the current tab. This way, you needn't type the marks if you don't want. With image & pdf files, the marks are stored, just not visibly.
- -   If the application/GUI font size (menu bars, buttons, etc) isn't to your liking, open up conf.xml and change the <style><font><size> tag. Enter a positive number to increase size, negative to decrease. Fonts for texts that you open up in a tab can be chosen under the Edit menu.
- -   Other config options can be altered in conf.xml if you choose, but most are automatically updated through application use.
+The Vim extension:
+ -  Requires Vim 8+ (I think)
+ -  Currently relies on Python 3 only for one function call. In the future this dependency will be removed so that it can run on a system having no Python.
+ -  Configuration script for Vim currently supports for vim-plug and pathogen utilities. For other plugin methods, it's currently DIY.
 
-Configuration details:
- -   Probably, the only global variable of concern is TAG_MARKER located in config.py. It was chosen to be "@@" because in normal, everyday literature, "@@" is not a commonly used punctuation. In html, e.g., "@@" might not be so uncommon. If you would rather use a different marker, change it.  But this doesn't magically change the markers in files you've already made...
- -   most other configuration values are found in conf.xml.
- -   Image marks & details are stored in index.xml.
+All portions:
+ -  Require sqlite3. The windowed portion requires Python module sqlite3; the Vim extension requires an sqlite3 binary in the user's $PATH
 
-Forthcoming:
- -   Vi/Vim plugin
- -   Emacs extension
+Installation and configuration:
+ -  Download these files or clone the git repo
+ -  Run the config.sh bash script with any desired options
+ -  The tag sequence for bookmarks is initially configured in the config.sh script, but can also be manually changed in appropriate files. Grep them to find them.
 
-Future tasks:
- -   remove mime storage in database if it isn't useful
- -   better handling of what is a text file and what is not.
- -   resolve malfunction of global Tk theme changes.
+Usage: 
+ -  In all portions: reading, writing, etc, of files is the same as it always was. However, once a few files have been bookmarked, files may be searched by those bookmarks. 
+ -  In all portions: Text files may be bookmarked simply by prefixing a word with the tag sequence. For example, by default the tag sequence is @@. So, in a text file about how to use ffmpeg to transcode a movie file from one codec to another, one might use @@ffmpeg and @@HVEC to make the file searchable by "ffmpeg" or "HVEC".
+ -  In all portions: silent bookmarks are not stored in the file itself. Hence, they must be added in a different manner. However, when searching for files by bookmark, nothing special must be done; silent marks will be searched as well.
+ -  Windowed GUI: operates much like any other windowed text editor. Use 'Sources' menu for specifying and scanning directories for your existing (if any) bookmarked text files. Scanning will also load (if any) silent marks that are associated with image, pdf, and text files. Under the 'Edit' menu marks may be managed/inserted. To run from the command line, type 'memobook'. Running as a desktop app is currently DIY, but...There's no icon included with these files. (The struggle is real.)
+ -  Vim: User preference may vary quite widely, so feel free to edit the plugin/memobook.vim to get desired key mappings. Out of the box, however, mappings are for <Leader>m followed by a single key: 
+    >  w ... write to disk after storing marks in memobook database
+    >  e ... followed by a list of marks: search for any file containing any of the marks listed
+    >  E ... followed by a list of marks: search for any file that contains every one of the marks listed
+    >  s ... scan directories for marks
+    >  S ... manage scan directories
+    >  m ... manage silent marks
+    >  M ... print silent marks associated with the current buffer 
+ -  Emacs: under construction.
+
+For the future:
+ -  Finish the Emacs extension
+ -  Fix UTF-associated problems for text files
+ -  Remove Python-dependency in Vim extension
+ -  Do whatever needs to be done for portions of this suite to run on just about any Windows, MacOS, BSD, or Linux system.
+ -  Better handling of what is a text file and what is not.
+ -  Resolve malfunction of global Tk theme changes.

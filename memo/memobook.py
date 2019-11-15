@@ -837,8 +837,8 @@ class Memobook:
                                              width=27,
                                              selectmode="multiple")
             if focus.tags:
-                for t in focus.tags:
-                    top_right_vis_dest.insert(END,t)
+                #for t in focus.tags:
+                #    top_right_vis_dest.insert(END,t)
                 if focus.tags.silent:
                     for st in focus.tags.silent:
                         top_right_invis_dest.insert(END,st)

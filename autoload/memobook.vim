@@ -11,24 +11,29 @@ set cpo&vim
 
 " Memobook locations and files (rewritten by configuration script)
 if !exists("s:memo_loc")
-	let s:memo_loc = "~/code/memobook"
+	let s:memo_loc = "/home/travertine/fiddlesticks"
 endif
 if !exists("s:memo_db")
-	let s:memo_db = "archive.db"
+	let s:memo_db = "/home/travertine/fiddlesticks/archive.db"
 endif
 if !exists("s:memo_conf")
 	let s:memo_conf = "memo/config.py"
 endif
 if !exists("s:memo_econf")
-	let s:memo_econf = "conf.xml"
+	let s:memo_econf = "/home/travertine/fiddlesticks/conf.xml"
 endif
 if !exists("s:memo_dex")
-	let s:memo_dex = "index.xml"
+	let s:memo_dex = "/home/travertine/fiddlesticks/index.xml"
 endif
 if !exists("s:xml_offset")
 	let s:xml_offset = 1
 endif
-
+if !exists("s:memo_mark")
+	let s:memo_mark = "@@"
+endif
+if !exists("s:memo_sqlite")
+	let s:memo_sqlite = "sqlite3"
+endif
 
 " Functions in alphabetical order:
 
@@ -60,7 +65,7 @@ function! memobook#Edit(logic,...)
 		else
 			let marks = input("Marks(all): ")
 		endif
-		let marklist = s:Splitmarks(marks)
+		let marklist = s:Splitwords(marks,0)
 		echo ""
 	else
 		let marklist = a:000
@@ -111,11 +116,14 @@ endfunction
 
 
 function! s:Filesbymark(mk)
-	  let cmd = "sqlite3 -line " . s:memo_loc ."/" . s:memo_db  . 
+	  let cmd = s:memo_sqlite . " -line " . s:memo_db  . 
 		\ " 'select * from bookmarks where mark=\"" . a:mk . "\" and type=0 ;'"
 	  let dbretval = system(cmd)
 	  let retval = []
-	  if dbretval != ""
+	  if dbretval =~ "^Error"
+		  echo "\n" . dbretval
+		  return retval
+	  else
 	      let groups = split(dbretval,"\n\n")
 	      if !empty(groups)
 	      	 for str in groups
@@ -132,11 +140,14 @@ endfunction
 
 
 function! s:Marksbyfile(fl)
-	  let cmd = "sqlite3 -line " . s:memo_loc ."/" . s:memo_db  . 
+	  let cmd = s:memo_sqlite . " -line " . s:memo_db  . 
 		\ " 'select rowid,mark from bookmarks where file=\"" . a:fl . "\";'"
 	  let dbretval = system(cmd)
 	  let retval = []
-	  if dbretval != ""
+	  if dbretval =~ "^Error"
+		  echo "\n" . dbretval
+		  return retval
+	  else
 	      let groups = split(dbretval,"\n\n")
 	      if !empty(groups)
 	      	 for str in groups
@@ -156,7 +167,7 @@ function! s:Parsebuffer()
     let curcol = virtcol(".") "virtcol("'<")
     call cursor(1,1)
     let results = []
-    while search("@@","W")
+    while search(memo_mark,"W")
         "execute "/@@\c[0-9\-a-z][0-9\-a-z]*"
 	let markstart = getpos(".")[2] + 1 " getpos returns col counting from 1, 
 					   " but string splicing starts from 0
@@ -202,7 +213,7 @@ endfunction
 
 
 function! s:Removefromdb(mk)
-	  let cmd = "sqlite3 -line " . s:memo_loc ."/" . s:memo_db  . 
+	  let cmd = s:memo_sqlite . " -line " . s:memo_db  . 
 		\ " 'delete from bookmarks where mark=\"" . a:mk . "\";'"
 	  let retval = system(cmd)
 	  exe "normal! o" . retval . "\<Esc>"
@@ -303,16 +314,24 @@ function! s:Savetodb(filename,filetype)
         let markstoadd = marksinbuffer
     endif
     for savemark in markstoadd
-	call system("sqlite3 -line " . s:memo_loc ."/" . s:memo_db  . 
-		\ " 'insert into bookmarks(mark,file,type) values(\"" 
-		\ . savemark . "\",\"" . a:filename . "\",\"" 
-		\ . a:filetype . "\");'")
+	let dbretval = system(s:memo_sqlite . " -line " . s:memo_db  . 
+			\ " 'insert into bookmarks(mark,file,type) values(\"" 
+			\ . savemark . "\",\"" . a:filename . "\",\"" 
+			\ . a:filetype . "\");'")
+	if dbretval =~ "^Error"
+		  echo "\n" . dbretval
+		  return
+	endif
     endfor
     if !empty(markstoremove)
 	for delmark in markstoremove
-		call system("sqlite3 -line " . s:memo_loc ."/" . s:memo_db  . 
+		let dbretval = system(s:memo_sqlite . " -line " . s:memo_db  . 
 			\ " 'delete from bookmarks where rowid=" . 
 			\ str2nr(delmark) . ";'")
+		if dbretval =~ "^Error"
+			echo "\n" . dbretval
+			return
+		endif
 	endfor
     endif
 endfunction
@@ -321,15 +340,20 @@ endfunction
 function! memobook#Scan()
 	" I'd rather not rewrite this functionality, so I'll simply use a
 	" backend script memod.py
-	echo system("python3 " . s:memo_loc . "/memod.py --populate ")
+	echo system("python3 " . s:memo_loc . "/memod.py --ctrl=" . s:memo_econf .  " --populate ")
 	echo "Populated."
 endfunction
 
 
 function! memobook#ScanManage()
-	let curbuf = bufnr()
+	if expand('%:p') == ''
+		let curbuf = -1
+	else
+		let curbuf = bufnr()
+	endif
 	exec ":hide enew " 
 	exec ":hide e " . s:memo_econf
+	let editbuf = bufnr()
 	call cursor(1,1)
 	let dirlist = []
 	let pos_db_begin = search("<db>","W")
@@ -346,7 +370,11 @@ function! memobook#ScanManage()
 			endwhile
 		endif
 	else
-		exec ":bdelete " . bufnr()
+		if curbuf < 0
+			exec ":enew"
+			let curbuf = bufnr()
+		endif
+		exec ":bwipeout" . editbuf
 		exec ":b " . curbuf
 		echo "Database not found in " . s:memo_econf
 		return
@@ -360,9 +388,13 @@ function! memobook#ScanManage()
 			endfor
 		endif
 	endif
-	call extend(dirlist,s:Splitmarks(input("Add directories: ", "", "dir")))
+	call extend(dirlist,s:Splitwords(input("Add directories: ", "", "dir"),1))
 	if oldlist == dirlist
-		exec ":bdelete " . bufnr()
+		if curbuf < 0
+			exec ":enew"
+			let curbuf = bufnr()
+		endif
+		exec ":bwipeout" . editbuf
 		exec ":b " . curbuf
 		return
 	endif
@@ -388,10 +420,13 @@ function! memobook#ScanManage()
 		let i += 1
 	endfor
 	write
-	exec ":bdelete " . bufnr()
+	if curbuf < 0
+		exec ":enew"
+		let curbuf = bufnr()
+	endif
+	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf
 	return
-
 endfunction
 
 
@@ -442,7 +477,7 @@ function! memobook#SilentManage()
 		endif	
 	endif
 	" add, second
-	call extend(b:smarks,s:Splitmarks(input("Add silent marks: ")))
+	call extend(b:smarks,s:Splitwords(input("Add silent marks: "),0))
 	return
 endfunction
 
@@ -454,9 +489,14 @@ function! s:SilentWrite(fname)
 		let marks = copy(b:smarks)
 	endif
 	let storedlist = []
-	let curbuf = bufnr()
+	if expand('%:p') == ''
+		let curbuf = -1
+	else
+		let curbuf = bufnr()
+	endif
 	exec ":hide enew "
 	exec ":hide e ". s:memo_dex
+	let editbuf = bufnr()
 	" check dex for file name
 	" if present, rewrite marks
 	" else, append new entry
@@ -510,17 +550,40 @@ function! s:SilentWrite(fname)
 	endif
 	" finish up and return
 	write
-	exec ":bdelete " . bufnr()
+	if curbuf < 0
+		exec ":enew"
+		let curbuf = bufnr()
+	endif
+	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf 
 endfunction
 
 
-function! s:Splitmarks(inputstring)
-    if !empty(a:inputstring) 
-	if !empty(matchstr(a:inputstring,","))
-	    return split(a:inputstring,",")
+function! s:Splitwords(inputstring,isadir)
+    if !empty(a:inputstring)
+	let working_str = a:inputstring
+	if a:isadir == 1
+		while working_str =~ '\~'
+			let index = match(working_str,'\~')
+			if index == 0
+				let rhalf = working_str[1:]
+				let working_str = $HOME . rhalf
+				continue
+			endif
+			if index == len(working_str)-1
+				let lhalf = working_str[0:len(working_str)-2]
+				let working_str = lhalf . $HOME
+				continue
+			endif
+			let lhalf = working_str[0:index-1]
+			let rhalf = working_str[index+1:len(working_str)-1]
+			let working_str = lhalf . $HOME . rhalf
+		endwhile
+	endif
+	if !empty(matchstr(working_str,","))
+	    return split(working_str,",")
 	else
-	    return split(a:inputstring)
+	    return split(working_str)
 	endif
     else
 	return []
@@ -528,10 +591,14 @@ function! s:Splitmarks(inputstring)
 endfunction
 
 
-function! memobook#Write(filename,filetype)
-    call s:Savetodb(a:filename,a:filetype)
-    call s:SilentWrite(a:filename)
-    write
+function! memobook#Write(filetype,filename)
+	if a:filename == ""
+		echo "Please set buffer file name before calling Mwrite"
+		return
+	endif
+	call s:Savetodb(a:filename,a:filetype)
+	call s:SilentWrite(a:filename)
+	exec ":write " . a:filename
 endfunction
 
 let &cpo = s:cpo_save

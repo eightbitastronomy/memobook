@@ -25,7 +25,7 @@ nmap <silent> <leader>m :call Interface()<CR>
 
 " Commands {{{
 
-command! -nargs=0 	Mwrite		:call memobook#Write(expand('%:p'),"0")
+command! -nargs=1 	Mwrite		:call memobook#Write("0",<f-args>)
 command! -nargs=+ -bang Medit		:call memobook#Edit(<bang>0,<f-args>)
 command! -nargs=0	Msil		:call memobook#SilentDisplay()
 command! -nargs=0	Msilm		:call memobook#SilentManage()
@@ -42,7 +42,7 @@ function! Interface()
     let c = nr2char(getchar())
     if c == "w"
         " intercept write and store marks
-        call memobook#Write(expand('%:p'),"0")
+        call memobook#Write("0",expand('%:p'))
     elseif c == "e"
 	" Edit/Read files: marks will be ORed together
 	call memobook#Edit(0)
