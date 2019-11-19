@@ -25,6 +25,7 @@ nmap <silent> <leader>m :call Interface()<CR>
 
 " Commands {{{
 
+command! -nargs=0	Mclear		:call memobook#ClearDB()
 command! -nargs=1 	Mwrite		:call memobook#Write("0",<f-args>)
 command! -nargs=+ -bang Medit		:call memobook#Edit(<bang>0,<f-args>)
 command! -nargs=0	Msil		:call memobook#SilentDisplay()

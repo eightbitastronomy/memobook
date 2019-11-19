@@ -387,8 +387,10 @@ function configure_vim
     sed -i "s|s:memo_econf = \".*\"|s:memo_econf = \"${CONF}\"|" "autoload/memobook.vim"
     sed -i "s|s:memo_dex = \".*\"|s:memo_dex = \"${DEX}\"|" "autoload/memobook.vim"
     sed -i "s|s:memo_mark = \".*\"|s:memo_mark = \"${MARK}\"|" "autoload/memobook.vim"
-    #sed -i "s|sqlite3|${SQLITE}|g" "autoload/memobook.vim"
     sed -i "s|s:memo_sqlite = \".*\"|s:memo_sqlite = \"${SQLITE}\"|" "autoload/memobook.vim"
+    if [ $NOPY == 1 ]; then
+	    sed -i "s|memobook#Scan()|memobook#Scann()|g" "plugin/memobook.vim"
+    fi
     if [ ! -z $VIMPLUG ]; then
 	# MOVE FILE TEST HERE IF ALL PLUGIN UTILS HAVE LINES IN .VIMRC
 	case $VIMPLUG in

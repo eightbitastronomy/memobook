@@ -54,6 +54,13 @@ function! s:Choices(preamble,choicelist)
 endfunction
 
 
+function! memobook#ClearDB()
+	call system(s:memo_sqlite . " -line " . s:memo_db . 
+		\ " 'drop table bookmarks;'")
+	call system(s:memo_sqlite . " -line " . s:memo_db . 
+		\ " 'create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);'")
+endfunction
+
 function! memobook#Edit(logic,...)
 	" get files by marks (OR)
 	if (a:logic < 0) || (a:logic > 1)
@@ -167,7 +174,7 @@ function! s:Parsebuffer()
     let curcol = virtcol(".") "virtcol("'<")
     call cursor(1,1)
     let results = []
-    while search(memo_mark,"W")
+    while search(s:memo_mark,"W")
         "execute "/@@\c[0-9\-a-z][0-9\-a-z]*"
 	let markstart = getpos(".")[2] + 1 " getpos returns col counting from 1, 
 					   " but string splicing starts from 0
@@ -176,6 +183,26 @@ function! s:Parsebuffer()
     endwhile
     call cursor(curline,curcol)
     return results
+endfunction
+
+
+function! s:ParseFile(filename)
+	if expand('%:p') == ''
+		let curbuf = -1
+	else
+		let curbuf = bufnr()
+	endif
+	exec ":hide enew " 
+	exec ":hide e " . a:filename
+	let editbuf = bufnr()
+	let retmarks = s:Parsebuffer()
+	if curbuf < 0
+		exec ":enew"
+		let curbuf = bufnr()
+	endif
+	exec ":bwipeout" . editbuf
+	exec ":b " . curbuf
+	return retmarks
 endfunction
 
 
@@ -287,7 +314,7 @@ function! s:RetrieveFilesList(mk,logic)
 endfunction
 
 
-function! s:Savetodb(filename,filetype)
+function! s:SavetodbUnprocessed(filename,filetype)
     let marksinbuffer = s:Parsebuffer()
     if exists("b:smarks")
 	    call extend(marksinbuffer,b:smarks)
@@ -337,11 +364,101 @@ function! s:Savetodb(filename,filetype)
 endfunction
 
 
+function! s:SavetodbProcessedText(filename,marks)
+	for mark in a:marks
+		let dbretval = system(s:memo_sqlite . " -line " . s:memo_db  . 
+				\ " 'insert into bookmarks(mark,file,type) values(\"" 
+				\ . mark . "\",\"" . a:filename . "\",\"0\");'")
+		if dbretval =~ "^Error"
+			  echo "\n" . dbretval
+			  return
+		endif
+	endfor
+endfunction
+
+
 function! memobook#Scan()
-	" I'd rather not rewrite this functionality, so I'll simply use a
-	" backend script memod.py
+	" Scan using Python (faster)
 	echo system("python3 " . s:memo_loc . "/memod.py --ctrl=" . s:memo_econf .  " --populate ")
 	echo "Populated."
+endfunction
+
+
+function! memobook#Scann()
+	" Scan without using Python (slower)
+	" First, read scan directories
+	if expand('%:p') == ''
+		let curbuf = -1
+	else
+		let curbuf = bufnr()
+	endif
+	exec ":hide enew " 
+	exec ":hide e " . s:memo_econf
+	let editbuf = bufnr()
+	call cursor(1,1)
+	let dirlist = []
+	let pos_db_begin = search("<db>","W")
+	if pos_db_begin > 0
+		" use xml_offset to find the beginning of the record
+		let pos_db_end = search("</db>","nW")
+		if pos_db_end > pos_db_begin
+			while search("<scan>","W",pos_db_end)
+				let markstart = getpos(".")[2] + 5
+				call search("</scan>","W",pos_db_end)
+				let markend = getpos(".")[2] - 2
+				let dirstring = getline(".")[markstart:markend]
+				call add(dirlist,dirstring)
+			endwhile
+		endif
+	endif
+	if curbuf < 0
+		exec ":enew"
+		let curbuf = bufnr()
+	endif
+	exec ":bwipeout" . editbuf
+	exec ":b " . curbuf
+	if (pos_db_begin < 1) || empty(dirlist)
+		echo "Database not found in " . s:memo_econf
+		return
+	endif
+	" Iterate through each scan directory and parse text files
+	call memobook#ClearDB()
+	if expand('%:p') == ''
+		let curbuf = -1
+	else
+		let curbuf = bufnr()
+	endif
+	exec ":hide enew " 
+	let editbuf = bufnr()
+	for dir in dirlist
+		let fileslist = split(globpath(dir,'**'),'\n')
+		for file in fileslist
+			if fnamemodify(file,":e") == "txt"
+				let marks = []
+				exec ":hide r " . file
+				while search(s:memo_mark,"W")
+					let markstart = getpos(".")[2] + 1 " getpos returns col counting from 1, 
+									   " but string splicing starts from 0
+					let rstring = split(getline(".")[markstart:]," ")[0]
+					call add(marks,rstring)
+				endwhile
+				exec "normal G"
+				let lastline = getcurpos()[1]
+				exec ":1," . lastline . "d"
+				call cursor(1,1)
+				if !empty(marks)
+					call s:SavetodbProcessedText(file,marks)
+				endif
+				" echo file marks
+			endif
+		endfor
+	endfor
+	if curbuf < 0
+		exec ":enew!"
+		let curbuf = bufnr()
+	endif
+	exec ":bwipeout" . editbuf
+	exec ":b " . curbuf
 endfunction
 
 
@@ -596,7 +713,7 @@ function! memobook#Write(filetype,filename)
 		echo "Please set buffer file name before calling Mwrite"
 		return
 	endif
-	call s:Savetodb(a:filename,a:filetype)
+	call s:SavetodbUnprocessed(a:filename,a:filetype)
 	call s:SilentWrite(a:filename)
 	exec ":write " . a:filename
 endfunction

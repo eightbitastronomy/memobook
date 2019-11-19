@@ -35,8 +35,8 @@ import os.path
 import memo
 
 working_path = os.path.dirname(os.environ["_"])
-cctrll="/home/travertine/fiddlesticks/conf.xml"
-ddexx="/home/travertine/fiddlesticks/index.xml"
+cctrll="./conf.xml"
+ddexx="./index.xml"
 
 mb = memo.memobook.Memobook(ctrl=cctrll,index=ddexx)
 
