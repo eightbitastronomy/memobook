@@ -116,8 +116,8 @@ class TkMemobook(Memobook):
         else:
             self.tabs = Book(self.root,ruling=self.ctrl,width=self.ctrl["x"],height=self.ctrl["y"])
             #self.tabs.ruling(self.ctrl)  #if ruling is not specified in constructor call, it must be done so here
-            self.tabs.set_save_hook(lambda:self.__save_note())
-            self.tabs.set_close_hook(lambda:self.__close_page())
+            self.tabs.set_save_hook(lambda:self.save_note())
+            self.tabs.set_close_hook(lambda:self.close_page())
             self.tabs.bind("<Double-Button-1>",lambda e: self.tabs.newpage(None))
         self.menu = Menu(self.root)
         self.set_bindings()
