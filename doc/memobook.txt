@@ -1,0 +1,90 @@
+*memobook.txt*
+
+Author:  eightbitastronomy (eightbitastronomy@protonmail.com)
+Repo:    https://github.com/eightbitastronomy/memobook
+License: See LICENSE.TXT
+
+USAGE                                         *memobook*
+
+:Mclear               Clear the marks database. Does not clear silent
+                      mark index.
+
+:Mwrite [file]        Write buffer. If buffer has no name, will fail
+                      with error.
+
+:Medit[!] [marks]     Load files into buffers based on marks listed.
+                      Search terms are ORed together unless ! is used,
+		      in which case terms are ANDed together.
+
+:Medita               Load files based on visual selection. Behaves
+                      similarly to |:Medit|
+
+:Mmark[!]             Insert mark-tags into visually-selected text.
+		      Presence of ! invokes |:Msil| behavior.
+
+:Msil                 Add silent marks to the current buffer based on
+                      visually-selected text. Duplicate marks will not
+		      be added. Silent marks are not written to the
+		      database or to the index until |:Mwrite| is
+		      called.
+
+:Msild                Display silent marks for the current buffer.
+
+:Msilm                Manage silent marks for the current buffer.
+		      Silent marks are not written to the
+		      database or to the index until |:Mwrite| is
+		      called.
+
+:Mscan                Scan specified directories for marked files.
+		      To set specified directories, see |:Mscanm|.
+
+:Mscanm               Manage directories for scanning.
+
+MAPPINGS                                     *memobook-mappings*
+
+Memobook uses |<Leader>m| following by a single keystroke for quick
+access to several functionalities. In normal mode:
+
+e                     Edit (any), or |:Medit|. User will be prompted for marks.
+
+E                     Edit (all), or |:Medit!|. User will be prompted for
+		      marks.
+
+s		      Manage silent marks, or |:Msilm|.
+
+w                     Write buffer, or |:Mwrite|.
+
+And in visual mode:
+
+e                     Edit (any), or |:Medita|.
+
+E		      Edit (all), or |:Medita!|.
+
+m                     Insert marks into text, or |:Mmark|
+
+s		      Insert silent marks, or |:Msil|.
+
+w                     Write buffer, or |:Mwrite|.
+
+CONFIGURATION                                 *memobook-config*
+
+Configuration of Memobook can be done in an automated way via config.sh
+bash script provided with the suite, or can be done by hand by editing
+the plugin source files. Use of config.sh is encouraged, as one of the
+primary goals of the Memobook Note Suite is ease of use: by tying 
+together functionalities over several preexisting applications, a user
+can store and retrieve notes without being constrained to a single
+mode of use, such as to a sticky-notes app. With this is mind, there
+are some manual edits to this plugin that will not affect the overall
+Suite interoperability (e.g., changing the mappings).
+
+CHANGELOG                                    *memobook-config*
+
+Information specific to the Vim plugin:
+
+Version 1.2           Redesign of user interface. Addition of 
+                      documentation. Addition of visual-mode functions.
+
+
+
+ vim:tw=78:et:ft=help:norl:

@@ -11,19 +11,19 @@ set cpo&vim
 
 " Memobook locations and files (rewritten by configuration script)
 if !exists("s:memo_loc")
-	let s:memo_loc = "/home/travertine/fiddlesticks"
+	let s:memo_loc = "/home/travertine/code/memobook"
 endif
 if !exists("s:memo_db")
-	let s:memo_db = "/home/travertine/fiddlesticks/archive.db"
+	let s:memo_db = "/home/travertine/code/memobook/archive.db"
 endif
 if !exists("s:memo_conf")
 	let s:memo_conf = "memo/config.py"
 endif
 if !exists("s:memo_econf")
-	let s:memo_econf = "/home/travertine/fiddlesticks/conf.xml"
+	let s:memo_econf = "/home/travertine/code/memobook/conf.xml"
 endif
 if !exists("s:memo_dex")
-	let s:memo_dex = "/home/travertine/fiddlesticks/index.xml"
+	let s:memo_dex = "/home/travertine/code/memobook/index.xml"
 endif
 if !exists("s:xml_offset")
 	let s:xml_offset = 1
@@ -61,24 +61,10 @@ function! memobook#ClearDB()
 		\ " 'create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);'")
 endfunction
 
-function! memobook#Edit(logic,...)
-	" get files by marks (OR)
-	if (a:logic < 0) || (a:logic > 1)
-		return
-	endif
-	if a:0 == 0
-		if a:logic == 0
-        		let marks = input("Marks(any): ")
-		else
-			let marks = input("Marks(all): ")
-		endif
-		let marklist = s:Splitwords(marks,0)
-		echo ""
-	else
-		let marklist = a:000
-	end
-	if !empty(marklist)
-		let flist = s:RetrieveFilesList(marklist,a:logic)
+
+function! s:Edit(logic,marklist)
+	if !empty(a:marklist)
+		let flist = s:RetrieveFilesList(a:marklist,a:logic)
 		if empty(flist)
 			return
 		endif
@@ -122,6 +108,49 @@ function! memobook#Edit(logic,...)
 endfunction
 
 
+function! memobook#Edit_normal(logic,...)
+	" get files by marks (OR)
+	if (a:logic < 0) || (a:logic > 1)
+		return
+	endif
+	if a:0 == 0
+		if a:logic == 0
+        		let marks = input("Marks(any): ")
+		else
+			let marks = input("Marks(all): ")
+		endif
+		let marklist = s:Splitwords(marks,0)
+		echo ""
+	else
+		let marklist = a:000
+	end
+	call s:Edit(a:logic,marklist)
+endfunction
+
+
+function! memobook#Edit_visual(logic,mode)
+	let [line_start, column_start] = getpos("'<")[1:2]
+	let [line_end, column_end] = getpos("'>")[1:2]
+	let lines = getline(line_start, line_end)
+	if len(lines) == 0
+		return ''
+	endif
+	if a:mode == 'v'
+		let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+		let lines[0] = lines[0][column_start - 1:]
+	elseif a:mode == "\<C-v>" 
+		let tmplines = []
+		for line in lines
+			call add(tmplines,line[column_start-1:column_end-(&selection == 'inclusive' ? 1 : 2)])
+		endfor
+		let lines = tmplines
+	endif
+	echo s:Splitwords(join(lines, " "),0)
+	call s:Edit(a:logic,s:Splitwords(join(lines, " "),0))
+	return
+endfunction
+
+
 function! s:Filesbymark(mk)
 	  let cmd = s:memo_sqlite . " -line " . s:memo_db  . 
 		\ " 'select * from bookmarks where mark=\"" . a:mk . "\" and type=0 ;'"
@@ -143,6 +172,136 @@ function! s:Filesbymark(mk)
 	      endif
 	  endif
 	  return retval
+endfunction
+
+
+function! memobook#Markemup(type,mode)
+	let [line_start, column_start] = getpos("'<")[1:2]
+	let [line_end, column_end] = getpos("'>")[1:2]
+	let lines = getline(line_start, line_end)
+	let lcount = len(lines)
+	" set line starts & stops: 0, first line
+	"                          1, body lines
+	"                          2, last line
+	" visualmode determines what these will be
+	let start = [0,0,0]
+	let stop = [-1,-1,-1]
+	if lcount == 0
+		return
+	else
+		if a:mode != 'V'
+			let start[0] = column_start - 1
+			if a:mode == "\<C-v>"
+				let start[1] = start[0]
+				let stop[0] = column_end - (&selection == 'inclusive' ? 1 : 2)
+				let stop[1] = stop[0]
+				let start[2] = start[0]
+				let stop[2] = stop[0]
+			else
+				if lcount == 1
+					let stop[0] = column_end - (&selection == 'inclusive' ? 1 : 2)
+				endif
+				let stop[2] = column_end - (&selection == 'inclusive' ? 1 : 2)
+			endif
+		endif
+	endif
+	let position = column_end " stores rightmost position of cursor
+	let i = 0 " controls actual line #
+	let j = 0 " controls first-body-last line
+	let results = []
+	if a:type == 0
+		while i < lcount
+			if i == 0
+				let j = 0
+			elseif i < lcount
+				let j = 1
+			else
+				let j = 2
+			endif
+			if (start[j] > 0) 
+				if lines[i][start[j]-1] == ' '
+					let startfragment = lines[i][0:start[j]-1]
+				else
+					let startfragment = lines[i][0:start[j]-1] . " "
+				endif
+			else
+				if lines[i][start[j]] == ' '
+					let startfragment = " "
+				else
+					let startfragment = ""
+				endif
+			endif
+			if (stop[j] != -1) && (stop[j] < len(lines[i]))
+				if lines[i][stop[j]] == ' '
+					let endfragment = " " . lines[i][stop[j]+1:]
+					let endpoint = stop[j]-1
+				else
+					let endfragment = lines[i][stop[j]+1:]
+					let endpoint = stop[j]
+				endif
+			else
+				let endfragment = ""
+				let endpoint = stop[j]
+			endif
+			let k = input("")
+			let workfragment = join(s:Splitwords(lines[i][start[j]:endpoint],0,["@","\n"])," ".s:memo_mark)
+			if i == lcount - 1
+				let position = len(startfragment) + len(workfragment)
+			endif
+			let flattened = startfragment . 
+					\ s:memo_mark . 
+					\ workfragment . 
+					\ endfragment
+			call add(results,flattened)
+			let i += 1
+		endwhile
+		let i = line_start
+		while i <= line_end
+			exec ":" . line_start . "d"
+			let i += 1
+		endwhile
+		let i = 0
+		while i < lcount
+			call append(line_start-1+i,results[i])
+			let i += 1
+		endwhile
+		call cursor(line_end,position)
+	else " Silent marking
+		while i < lcount
+			if i == 0
+				let j = 0
+			elseif i < lcount
+				let j = 1
+			else
+				let j = 2
+			endif
+			call extend(results,s:Splitwords(lines[i][start[j]:stop[j]],0))
+			let i += 1
+		endwhile
+		let answers = s:Choices("Select marks to be added silently:",results)
+		if empty(answers)
+			return
+		endif
+		let finals = []
+		if !exists('b:smarks')
+			let b:smarks = []
+			let finals = answers
+		else	
+			if !empty(b:smarks)
+				for num in answers
+					if index(b:smarks,results[str2nr(num)]) == -1
+						call add(finals,num)
+					endif
+				endfor
+			else
+				let finals = answers
+			endif
+		endif
+		for num in finals
+			call add(b:smarks,results[str2nr(num)])
+		endfor
+	endif
+	return
 endfunction
 
 
@@ -239,6 +398,7 @@ function! s:ParseNumberList(numbers)
 endfunction
 
 
+
 function! s:Removefromdb(mk)
 	  let cmd = s:memo_sqlite . " -line " . s:memo_db  . 
 		\ " 'delete from bookmarks where mark=\"" . a:mk . "\";'"
@@ -279,8 +439,8 @@ function! s:RetrieveFilesList(mk,logic)
 				else
 					call add(tuplelist,retlist[0])
 				endif
-			else
-				let n -= 1
+			"else
+				"let n -= 1
 			endif
 		endfor
 		if empty(tuplelist)
@@ -573,7 +733,7 @@ function! s:SilentLoad(fname)
 			call add(retlist,rstring)	
 		endwhile
 	endif
-	exec ":bdelete " . bufnr()
+	exec ":bwipeout" . bufnr()
 	exec ":b " . curbuf
 	return retlist
 endfunction
@@ -676,9 +836,14 @@ function! s:SilentWrite(fname)
 endfunction
 
 
-function! s:Splitwords(inputstring,isadir)
+function! s:Splitwords(inputstring,isadir,...)
     if !empty(a:inputstring)
 	let working_str = a:inputstring
+	if a:0 == 0
+		let lims = []
+	else
+		let lims = a:000
+	endif
 	if a:isadir == 1
 		while working_str =~ '\~'
 			let index = match(working_str,'\~')
@@ -696,12 +861,34 @@ function! s:Splitwords(inputstring,isadir)
 			let rhalf = working_str[index+1:len(working_str)-1]
 			let working_str = lhalf . $HOME . rhalf
 		endwhile
-	endif
-	if !empty(matchstr(working_str,","))
-	    return split(working_str,",")
+		if empty(lims)
+			call extend(lims,[',',':',';'])
+		endif
 	else
-	    return split(working_str)
+		if empty(lims)
+			call extend(lims, [',','.',';',':','!','?',"\"","\'","@"])
+		endif
 	endif
+	let tmpstr = "" 
+	let i = 0
+	while i < len(working_str)
+		if index(lims,working_str[i]) > -1
+			let tmpstr .= " "
+		else
+			let tmpstr .= working_str[i]
+		endif
+		let i += 1
+	endwhile
+	let working_list = split(tmpstr)
+	while 1
+		let i = index(working_list,'')
+		if i > -1
+			call remove(working_list,i)
+		else
+			break
+		endif
+	endwhile
+	return working_list
     else
 	return []
     endif
