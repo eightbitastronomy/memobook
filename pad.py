@@ -38,7 +38,7 @@ working_path = os.path.dirname(os.environ["_"])
 cctrll="./conf.xml"
 ddexx="./index.xml"
 
-mb = memo.memobook.Memobook(ctrl=cctrll,index=ddexx)
+mb = memo.tkmemobook.TkMemobook(ctrl=cctrll,index=ddexx)
 
 
 mb.root.mainloop()

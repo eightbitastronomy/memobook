@@ -33,7 +33,7 @@ def write_skeleton_conf(filepath):
         f.write('''<?xml version="1.0" ?>
 <configuration>
    <db>
-      <src>archive.db</src>
+      <src>./archive.db</src>
       <table>bookmarks</table>
       <scan>.</scan>
     </db>
@@ -96,8 +96,8 @@ def write_skeleton_conf(filepath):
     <wrap>word</wrap>
     <save>.</save>
     <open>.</open>
-    <loc>.</loc>
-    <index>.</index>
+    <loc>./conf.xml</loc>
+    <index>./index.xml</index>
     <x>200</x>
     <y>200</y>
   </configuration>''')

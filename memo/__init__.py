@@ -1,4 +1,5 @@
 import memo.memobook as memobook
+import memo.tkmemobook as tkmemobook
 import memo.book as book
 import memo.page as page
 import memo.binding as binding
