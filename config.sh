@@ -422,8 +422,8 @@ function configure_python
     fi
     # 2) make substitions
     sed -i "s/TAG_MARKER=\".*\"/TAG_MARKER=\"${MARK}\"/" $PWD/memo/config.py
-    sed -i "s|^cctrll =.*|cctrll=\"$CONF\"|" pad.py
-    sed -i "s|^ddexx =.*|ddexx=\"$DEX\"|" pad.py
+    sed -i "s|^cctrll =.*|cctrll = \"$CONF\"|" pad.py
+    sed -i "s|^ddexx =.*|ddexx = \"$DEX\"|" pad.py
     sed -i "s|^python3 .*|python3 $LOC/pad.py|" memobook 
     # 3) make copies to specified directories
     cp -r {pad.py,memod.py,config.sh,memo} $LOC
