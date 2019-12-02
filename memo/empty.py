@@ -28,12 +28,12 @@
 '''Module for printing skeleton conf.xml and index.xml when either is missing'''
 
 
-def write_skeleton_conf(filepath):
-    with open(filepath,"w") as f:
+def write_skeleton_conf(path,filepath):
+    with open(path + filepath,"w") as f:
         f.write('''<?xml version="1.0" ?>
 <configuration>
    <db>
-      <src>./archive.db</src>
+      <src>''' + path + '''archive.db</src>
       <table>bookmarks</table>
       <scan>.</scan>
     </db>
@@ -96,16 +96,16 @@ def write_skeleton_conf(filepath):
     <wrap>word</wrap>
     <save>.</save>
     <open>.</open>
-    <loc>./conf.xml</loc>
-    <index>./index.xml</index>
+    <loc>''' + path + filepath + '''</loc>
+    <index>''' + path + '''index.xml</index>
     <x>200</x>
     <y>200</y>
   </configuration>''')
 
 
 
-def write_skeleton_index(filepath):
-    with open(filepath,"w") as f:
+def write_skeleton_index(path,filepath):
+    with open(path+filepath,"w") as f:
         f.write('''<?xml version="1.0" ?>
   <contents>
   </contents>''')

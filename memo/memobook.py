@@ -60,9 +60,9 @@ class Memobook:
                 self.ctrl = extconf.load_file(kwargs["ctrl"])
             except Exception as e:
                 dprint(1,"Error loading or preparing memobook: " + str(e))
-                empty.write_skeleton_conf("conf.xml")
+                empty.write_skeleton_conf(os.getcwd()+os.sep,"conf.xml")
                 self.ctrl = extconf.load_file("conf.xml")
-                working_loc = './conf.xml'
+                working_loc = os.getcwd() + os.sep + 'conf.xml'
             else:
                 dprint(3,"conf.xml found. ")
                 #working_loc = str(os.path.dirname(kwargs["ctrl"]))
@@ -70,9 +70,9 @@ class Memobook:
                 #    working_loc == './conf.xml'
                 working_loc = kwargs["ctrl"]
         else:
-            empty.write_skeleton_conf("conf.xml")
+            empty.write_skeleton_conf(os.getcwd()+os.sep,"conf.xml")
             self.ctrl = extconf.load_file("conf.xml")
-            working_loc = './conf.xml'
+            working_loc = os.getcwd() + os.sep + 'conf.xml'
         self.ctrl["loc"] = working_loc
         if not "scan" in self.ctrl["db"].keys() :
             self.ctrl["db"]["scan"] = "."
@@ -92,9 +92,9 @@ class Memobook:
                 self.index = extconf.load_file(self.ctrl["index"])
         except Exception as e:
             dprint(1,"Error loading index.xml: " + str(e))
-            empty.write_skeleton_index("index.xml")
+            empty.write_skeleton_index(os.getcwd()+os.sep,"index.xml")
             self.index = extconf.load_file("index.xml")
-            index_loc = './index.xml'
+            index_loc = os.getcwd() + os.sep + 'index.xml'
             self.ctrl["index"] = index_loc
         self.data.set_index(self.index)
 
@@ -107,10 +107,10 @@ class Memobook:
         dprint(3,"\nMemobook::set_bindings:: ")
 
     
-    def open_mark( self, toc ):  # open by mark
-        dprint(3,"\nMemobook::open_mark:: ")
-        toc += [ item for item in self.data.toc() ]
-        toc.sort(key=lambda x: x.lower())
+    #def open_mark( self, toc ):  # open by mark
+    #    dprint(3,"\nMemobook::open_mark:: ")
+    #    toc += [ item for item in self.data.toc() ]
+    #    toc.sort(key=lambda x: x.lower())
 
         
     def _build_file_types(self):

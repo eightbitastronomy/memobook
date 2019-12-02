@@ -144,7 +144,7 @@ class TkMemobook(Memobook):
         mdict[Heading.MF].add_command(label="New",
                                       command=lambda: self.tabs.newpage(None))
         mdict[Heading.MF].add_command(label="Open by mark",
-                                      command=lambda: self.open_mark([]))
+                                      command=lambda: self.__open_mark())
         mdict[Heading.MF].add_command(label="Open from file",
                                       command=lambda: self.open_file())
         mdict[Heading.MF].add_command(label="Save",
@@ -198,14 +198,16 @@ class TkMemobook(Memobook):
         self.root.bind("<Alt-m>",lambda e: self.mark_dialogue())
 
 
-    def open_mark( self, toc ):  # open by mark
+    def __open_mark( self ):  # open by mark
         ### despite using select, invoke, focus_set, event_generate,
         ### tk wouldn't set the OR radiobutton as default.
         ### So the following sub-function is a workaround to force the issue.
-        Memobook.open_mark(self,toc)
         def default_selection(var):
             var.set("or")
         dprint(3,"\nTkMemobook::open_mark:: ")
+        #Memobook.open_mark(self,toc)
+        toc = [ item for item in self.data.toc() ]
+        toc.sort(key=lambda x: x.lower())
         getter = Toplevel(self.root)
         getter_list = ListboxHV(getter,selectmode="multiple")
         for item in toc:
