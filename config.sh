@@ -71,6 +71,7 @@ function usage
     echo "-p/--python [=]    Path of alternate python binary if not PATH/python3"
     echo "-P/--nopython      Disable python 3 configuration (currently under construction)"
     echo "-u/--vimplug [=]   Name/type of vim plugin utility (plugin utility must be installed prior; default is to do nothing)"
+    echo "                      If using Vim version >= 8, -u=8 may be used for builtin plugin functionality."
     echo "-v/--vimrc [=]     Path of vim startup script if not HOME/.vimrc"
     echo "-w/--vimdir [=]    Path of vim directory if not HOME/.vim"
     echo "-V/--novim         Disable emacs configuration (currently under construction)"
@@ -400,6 +401,16 @@ function configure_vim
 	    pathogen)
 		(! plugin_pathogen $VIMDIR $VIMRC $LOC) && echo "failed to configure plugin utility" && exit 1
 		;;
+	    8)
+		if [ ! -d $VIMDIR/pack/memobook ]; then
+		    mkdir -p $VIMDIR/pack/mns/start/memobook
+		    if [ $? -ne 0 ]; then
+			echo "Failed to create plugin directory ${VIMDIR}/pack/mns/memobook/..." 
+			return
+		    fi
+		    cp -r {autoload,doc,plugin} $VIMDIR/pack/mns/start/memobook/
+		fi
+		;;
 	esac
     fi
     echo "Prepared" $VIMRC "for plugin utility" $VIMPLUG
@@ -550,7 +561,6 @@ function parse # parse functions
 	exit 1
     fi
 }
-
 
 
 parse "$@"

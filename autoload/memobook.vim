@@ -11,19 +11,19 @@ set cpo&vim
 
 " Memobook locations and files (rewritten by configuration script)
 if !exists("s:memo_loc")
-	let s:memo_loc = "./"
+	let s:memo_loc = "./memobook"
 endif
 if !exists("s:memo_db")
-	let s:memo_db = "./archive.db"
+	let s:memo_db = "./memobook/archive.db"
 endif
 if !exists("s:memo_conf")
 	let s:memo_conf = "memo/config.py"
 endif
 if !exists("s:memo_econf")
-	let s:memo_econf = "./conf.xml"
+	let s:memo_econf = "./memobook/conf.xml"
 endif
 if !exists("s:memo_dex")
-	let s:memo_dex = "./index.xml"
+	let s:memo_dex = "./memobook/index.xml"
 endif
 if !exists("s:xml_offset")
 	let s:xml_offset = 1

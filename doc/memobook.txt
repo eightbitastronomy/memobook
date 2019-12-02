@@ -78,7 +78,7 @@ mode of use, such as to a sticky-notes app. With this is mind, there
 are some manual edits to this plugin that will not affect the overall
 Suite interoperability (e.g., changing the mappings).
 
-CHANGELOG                                    *memobook-config*
+CHANGELOG                                    *memobook-changes*
 
 Information specific to the Vim plugin:
 
