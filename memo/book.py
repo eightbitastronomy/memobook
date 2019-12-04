@@ -39,8 +39,7 @@ from PIL import Image as im
 from PIL import ImageTk
 from memo.note import NoteMime
 from memo.page import TextPage, ImagePage, PDFPage
-from memo.config import TAB_SIZE
-
+from memo.config import TAB_SIZE, dprint
 
 
 
@@ -210,6 +209,7 @@ class Book(NotebookCloseTab):
             curindex = self.index("current")
             curpg = self._pgs[curindex]
             if curpg.blank():
+                dprint(3,"\nBook::newpage::current page is blank")
                 # blank page? drop it and move on
                 self._pgs.pop(curindex)
                 self.forget(curindex)

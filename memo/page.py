@@ -116,6 +116,7 @@ class TextPage(Page):
         else:
             self.__search_hook = lambda: self.toggle_search()
         self.plate = hscroll.TextCompound(master=self.tab,
+                                          hook=lambda: self.set_changed(True),
                                           wrap=tkinter.WORD,
                                           undo=True,
                                           height=tmp_height,
@@ -160,6 +161,10 @@ class TextPage(Page):
     def changed(self):
         return self.plate.edit_modified()
     def set_changed(self,ch):
+        if ch:
+            self._state = State.EDIT
+        else:
+            self._state = State.NBLNK
         self.plate.edit_modified(ch)
     def toggle_wrap(self,wr=None):
         if wr and type(wr)==str:

@@ -259,7 +259,7 @@ class TkMemobook(Memobook):
                 last = self.data.get_last_error()
                 if last:
                     messagebox.showinfo("Open error",
-                                    "Unable to open file(s): " + str(self.data.get_last_error()))
+                                    "Unable to open file(s): " + str(last))
                 else:
                     failure = ", ".join(ls)
                     if logic == "or":

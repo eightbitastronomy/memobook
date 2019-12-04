@@ -128,33 +128,33 @@ class Memobook:
         return tuple(prep_list)
 
     
-    def open_file( self ):  # open by file name
+    def open_file(self):  # open by file name
         dprint(3,"\nMemobook::open_file:: ")
 
 
-    def save_note( self ):
+    def save_note(self):
         dprint(3,"\nMemobook::__save_note:: ")
         
 
-    def save_note_as( self ):
+    def save_note_as(self):
         dprint(3,"\nMemobook::__save_note_as:: ")
         
 
     def _process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
-        dprint(3,"\nMemobook::__process_save_target:: Note title is " + note.title + ", saveas=" + str(saveas) + ". " )
+        dprint(3,"\nMemobook::__process_save_target:: Note title is " + note.title + ", saveas=" + str(saveas) + ". ")
         return 0
     
 
-    def close_page( self ):
+    def close_page(self):
         dprint(3,"\nMemobook::__close_page:: ")
         return 0
     
     
-    def close_all( self ):
+    def close_all(self):
         dprint(3,"\nMemobook::__close_all:: ")
                     
             
-    def exit_all( self,e ):
+    def exit_all(self,e):
         dprint(3,"\nMemobook::exit_all:: ")
         self.ctrl.print_config(self.ctrl["loc"])
         if isinstance(self.index,extconf.Configuration):
@@ -165,16 +165,16 @@ class Memobook:
         dprint(3,"\nMemobook::font_dialogue:: ")
 
 
-    def mark_dialogue( self ):  # select mark to be added to note from list of current marks
+    def mark_dialogue(self):  # select mark to be added to note from list of current marks
         dprint(3,"\nMemobook::__mark_dialogue:: ")
 
 
-    def _mark_update_index( self, win, ls, nt ):
+    def _mark_update_index(self, win, ls, nt):
         dprint(3,"\nMemobook::__mark_update_index:: ")
         self.data.update(nt,ls)
 
-    
-    def open_pop( self, hook_remove, hook_add, hook_apply ):  # populate bookmark lists
+
+    def open_pop(self, hook_remove, hook_add, hook_apply):  # populate bookmark lists
         dprint(3,"\nMemobook::__open_pop:: ")
 
 
