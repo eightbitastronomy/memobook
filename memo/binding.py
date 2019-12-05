@@ -772,13 +772,14 @@ class DatabaseBinding(Binding):
                 newc = extconf.Configuration(self.__dex.getdoc())
                 extconf.fill_configuration(newc,"file",members={"loc":nt.ID,"mark":[item for item in marks]},attributes={"type":str(nt.mime.value)})
                 extconf.attach_configuration(self.__dex,"file",newc)
+            total_marks = list(nt.tags) + list(nt.tags.silent)
             self.__cursor.execute('''select rowid,mark from bookmarks where file=?''',(nt.ID,))
             db_hits = self.__cursor.fetchall()
             for item in db_hits:
-                if not (item[1] in marks):
+                if not (item[1] in total_marks):
                     self.__cursor.execute('''delete from bookmarks where rowid=?''',(item[0],))
             self._src.commit()
-            for tag in marks:
+            for tag in total_marks:
                 if not (tag in [ item[1] for item in db_hits ]):
                     self.__cursor.execute('''insert into bookmarks (mark,file,type) values (?,?,?)''',(tag,nt.ID,nt.mime.value))
         self._src.commit()
