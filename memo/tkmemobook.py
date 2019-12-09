@@ -359,6 +359,7 @@ class TkMemobook(Memobook):
         save_nt = self.tabs.getnoteref(index)
         save_nt.body = self.tabs.getpageref(index).dump()
         if not save_nt.body:
+            dprint(3,"No note body, returning.")
             return
         ret_targ = self.__process_save_target(save_nt,
                                               saveas=True,
@@ -378,7 +379,7 @@ class TkMemobook(Memobook):
         self.tabs.clearchanges(index)
 
 
-    def _process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
+    def __process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
         dprint(3,"\nTkMemobook::_process_save_target:: Note title is " + note.title + ", saveas=" + str(saveas) + ". " )
         if note is None:
             return 1
