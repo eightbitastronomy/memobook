@@ -361,9 +361,9 @@ class TkMemobook(Memobook):
         if not save_nt.body:
             dprint(3,"No note body, returning.")
             return
-        ret_targ = self.__process_save_target(save_nt,
-                                              saveas=True,
-                                              callback=lambda c:self.tabs.tab(index,text=c))
+        ret_targ = self._process_save_target(save_nt,
+                                             saveas=True,
+                                             callback=lambda c:self.tabs.tab(index,text=c))
         if ( ret_targ > 0 ):
             dprint(2,"Unable to process save target. Aborting.\n")
             messagebox.showinfo("Save target error",
@@ -379,7 +379,7 @@ class TkMemobook(Memobook):
         self.tabs.clearchanges(index)
 
 
-    def __process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
+    def _process_save_target(self,note,saveas=False,callback=None):  # select file name for saving
         dprint(3,"\nTkMemobook::_process_save_target:: Note title is " + note.title + ", saveas=" + str(saveas) + ". " )
         if note is None:
             return 1
