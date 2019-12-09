@@ -1,0 +1,214 @@
+import gi
+gi.require_version('Gedit', '3.0')
+gi.require_version('Gtk', '3.0')
+from gi.repository import GObject, Gtk, Gedit, Gio
+import sys
+import importlib.util
+spec = importlib.util.spec_from_file_location("memo", "/home/travertine/code/memobook/memo/__init__.py")
+memo = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = memo
+spec.loader.exec_module(memo)
+
+
+
+
+try:
+    import gettext
+    gettext.bindtextdomain('gedit')
+    gettext.textdomain('gedit')
+    _ = gettext.gettext
+except:
+    _ = lambda s: s
+        
+
+
+
+mb = None
+
+
+
+
+    
+# For our example application, this class is not exactly required.
+# But we had to make it because we needed the app menu extension to show the menu.
+class MNSAppActivatable(GObject.Object, Gedit.AppActivatable):
+    app = GObject.Property(type=Gedit.App)
+    __gtype_name__ = "MNSAppActivatable"
+    menu_ext = []
+    menu_items = []
+    sub_menu_items = []
+    
+    def __init__(self):
+        GObject.Object.__init__(self)
+        global mb
+        print("MNSApp init")
+        if not mb:
+            mb = memo.gmemobook.gMemobook(ctrl="/home/travertine/code/memobook/conf.xml")
+            print("...Memobook initialized")
+
+        
+    def do_activate(self):
+        print("MNSApp do_activate")
+        self._build_menu()
+        
+        
+    def _build_menu(self):
+        print("MNSApp _build_menu")
+        #self.app.add_accelerator("<Primary><Alt>O", "win.open_by_mark", None)
+        menu_ext  = self.extend_menu("file-section")
+        self.menu_items.append(Gio.MenuItem.new(_("Open by mark"), "win.open_by_mark"))
+        self.menu_items.append(Gio.MenuItem.new(_("Save (with marks)"), "win.save_with_mark"))
+        self.menu_items.append(Gio.MenuItem.new(_("Save As (with marks)"), "win.save_as_with_mark"))
+        for item in self.menu_items:
+            menu_ext.append_menu_item(item)
+        self.menu_ext.append(menu_ext)
+        # This is the submenu which is added to a menu item and then inserted in tools menu.
+        menu_ext = self.extend_menu("tools-section")
+        sub_menu = Gio.Menu()
+        self.sub_menu_items.append(Gio.MenuItem.new(_("Open by mark"), 'win.open_by_mark'))
+        self.sub_menu_items.append(Gio.MenuItem.new(_("Silent marks"),'win.silent'))
+        self.sub_menu_items.append(Gio.MenuItem.new(_("Scan"),'win.scan'))
+        self.sub_menu_items.append(Gio.MenuItem.new(_("Clear"),'win.clear'))
+        self.sub_menu_items.append(Gio.MenuItem.new(_("Manage"),'win.manage'))
+        for sitem in self.sub_menu_items:
+            sub_menu.append_item(sitem)
+        menu_ext.append_menu_item(Gio.MenuItem.new_submenu(_("Memobook"), sub_menu))
+        self.menu_ext.append(menu_ext)
+        self.app.set_accels_for_action("win.open_by_mark", ("<Alt>m", None))
+        
+    def do_deactivate(self):
+        global mb
+        print("MNSApp do_deactivate")
+        self._remove_menu()
+        mb.exit_all(None)
+        
+    def _remove_menu(self):
+        print("MNSApp _remove_menu")
+        # removing accelerator and destroying menu items
+        self.app.set_accels_for_action("win.open_by_mark", ())
+        #self.app.remove_accelerator("win.open_by_mark", None)
+        self.menu_ext = None
+        self.menu_items = None
+        self.sub_menu_items = None
+        
+        
+class MNSWindowActivatable(GObject.Object, Gedit.WindowActivatable):
+    window = GObject.Property(type=Gedit.Window)
+    __gtype_name__ = "MNSWindowActivatable"
+    __mb_hook = None
+    
+    def __init__(self):
+        GObject.Object.__init__(self)
+        global mb
+        print("MNSWindow init")
+        self.__mb_hook = mb.add_window_hook(self.window)
+        # This is the attachment we will make to bottom panel.
+        #self.bottom_bar = Gtk.Box()
+        
+    #this is called every time the gui is updated
+    def do_update_state(self):
+        print("MNSWindow do_update_state")
+        # if there is no document in sight, we disable the action, so we don't get NoneException
+        if self.window.get_active_view() is not None:
+            self.window.lookup_action('open_by_mark').set_enabled(True)
+            
+    def do_activate(self):
+        print("MNSWindow do_activate")
+        # Defining the action which was set earlier in AppActivatable.
+        self._connect_menu()
+        #self._insert_bottom_panel()
+        
+    def _connect_menu(self):
+        print("MNSWindow _connect_menu")
+        refs = ( ('open_by_mark', self.__hook_open_mark),
+                 ('save_with_mark', self.__hook_save),
+                 ('save_as_with_mark', self.__hook_save_as),
+                 ('silent', self.__hook_silent),
+                 ('scan', lambda a,d: mb.data.populate()),
+                 ('clear', lambda a,d: mb.data.clear()),
+                 ('manage', self.__hook_manage),)
+        for ref in refs:
+            action = Gio.SimpleAction(name=ref[0])
+            action.connect('activate', ref[1])
+            self.window.add_action(action)
+
+        
+    def __hook_open_mark(self, action, data):
+        global mb
+        print("MNSWindow __hook_open_mark")
+        mb.select_window_hook(self.window)
+        mb.open_mark()
+
+
+    def __hook_save(self, action, data):
+        global mb
+        print("MNSWindow __hook_save")
+        mb.select_window_hook(self.window)
+        mb.save_note()
+
+
+    def __hook_save_as(self, action, data):
+        global mb
+        print("MNSWindow __hook_save")
+        mb.select_window_hook(self.window)
+        mb.save_note_as()
+
+
+    def __hook_manage(self, action, data):
+        global mb
+        print("MNSWindow __hook_manage")
+        mb.select_window_hook(self.window)
+        mb.open_pop(mb.open_pop_remove,mb.open_pop_add,mb.open_pop_apply)
+
+
+    def __hook_silent(self, action, data):
+        global mb
+        print("MNSWindow __hook_silent")
+        mb.select_window_hook(self.window)
+        mb.mark_dialogue()
+
+
+    # unused
+    def __hook_scan(self, action, data):
+        global mb
+        print("MNSWindow __hook_scan")
+        mb.data.populate()
+
+
+    # unused
+    def __hook_clear(self, action, data):
+        global mb
+        print("MNSWindow __hook_clear")
+        mb.data.clear()
+        
+
+    def _insert_bottom_panel(self):
+        print("MNSWindow _insert_bottom_panel")
+        # Add elements to panel.
+        self.bottom_bar.add(Gtk.Label("Hello There!"))
+        # Get bottom bar (A Gtk.Stack) and add our bar.
+        panel = self.window.get_bottom_panel()
+        panel.add_titled(self.bottom_bar, 'example', "Example")
+        # Make sure everything shows up.
+        panel.show()
+        self.bottom_bar.show_all()
+        panel.set_visible_child(self.bottom_bar)
+        
+    def do_deactivate(self):
+        print("MNSWindow do_deactivate")
+        #self._remove_bottom_panel()
+        pass
+        
+    def _remove_bottom_panel(self):
+        print("MNSWindow _remove_bottom_panel")
+        panel = self.window.get_bottom_panel()
+        panel.remove(self.bottom_bar)
+        
+    def do_create_configure_widget(self):
+        print("MNSWindow do_create_configure_widget")
+        # Just return your box, PeasGtk will automatically pack it into a box and show it.
+        box=Gtk.Box()
+        box.add(Gtk.Label("Settings Here!"))
+        return box
+
+

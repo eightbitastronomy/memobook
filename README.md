@@ -6,7 +6,7 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Then sure, you could grep your home directory to death. Or, this is the application for you.
 
 ## The Memobook Note Suite:
- -  Includes a Vim extension, a windowed GUI, and an upcoming Emacs extension
+ -  Includes a Vim plugin, a windowed GUI, a Gedit plugin, and possibly upcoming Emacs and KWrite extensions
  -  Can display image and pdf files too (read-only) with basic functionality (zooming, rotating, etc.) -- windowed GUI only.
  -  Stores information (your bookmarks) about the image & pdf files without altering them.
  -  Bookmarks in plaintext files can be tagged in the text itself, or can be "silently" added, i.e., recorded outside of the file
@@ -23,8 +23,11 @@ A notepad/texteditor derivative for people who don't want to remember everything
 
 ### The Vim extension:
  -  Requires Vim 8+ (I think)
- -  Currently relies on Python 3 only for one function call. In the future this dependency will be removed so that it can run on a system having no Python.
- -  Configuration script for Vim currently supports for vim-plug and pathogen utilities. For other plugin methods, it's currently DIY.
+ -  Currently has an option Python 3 dependency which can be removed so that it can run on a system having no Python.
+ -  Configuration script for Vim currently supports vim-plug and pathogen utilities, as well as Vim 8+ plugin functionality. For other plugin methods, it's currently DIY.
+
+### The Gedit plugin:
+ -  Requires Python 3 and PyGObject. PyGObject must be new enough to have Gtk 3+ and Gedit 3+ submodules.
 
 ### All portions:
  -  Require sqlite3. The windowed portion requires Python module sqlite3; the Vim extension requires an sqlite3 binary in the user's $PATH
@@ -39,20 +42,13 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  In all portions: Text files may be bookmarked simply by prefixing a word with the tag sequence. For example, by default the tag sequence is @@. So, in a text file about how to use ffmpeg to transcode a movie file from one codec to another, one might use @@ffmpeg and @@HVEC to make the file searchable by "ffmpeg" or "HVEC".
  -  In all portions: silent bookmarks are not stored in the file itself. Hence, they must be added in a different manner. However, when searching for files by bookmark, nothing special must be done; silent marks will be searched as well.
  -  Windowed GUI: operates much like any other windowed text editor. Use 'Sources' menu for specifying and scanning directories for your existing (if any) bookmarked text files. Scanning will also load (if any) silent marks that are associated with image, pdf, and text files. Under the 'Edit' menu marks may be managed/inserted. To run from the command line, type 'memobook'. Running as a desktop app is currently DIY, but...There's no icon included with these files. (The struggle is real.)
- -  Vim: User preference may vary quite widely, so feel free to edit the plugin/memobook.vim to get desired key mappings. Out of the box, however, mappings are for \<Leader\>m followed by a single key: 
-    -  w ... write to disk after storing marks in memobook database
-    -  e ... followed by a list of marks: search for any file containing any of the marks listed
-    -  E ... followed by a list of marks: search for any file that contains every one of the marks listed
-    -  s ... scan directories for marks
-    -  S ... manage scan directories
-    -  m ... manage silent marks
-    -  M ... print silent marks associated with the current buffer 
+ -  Vim: User preference may vary quite widely, so feel free to edit the plugin/memobook.vim to get desired key mappings. Please see doc/memobook.txt for mappings and command information.
+ -  Gedit: Alt-m brings up an open-by-mark dialogue. Under Tools->Memobook are basic options. Please make a special note of the menu items Save (with Marks) amd Save As (with Marks). They are necessary to save mark information into the memobook. These two items will do their memobook magic while Gedit does its own file-saving magic. If a file is saved without them, mark information will not be recorded. I admit this is clumsy, but until I find a better way, this was the best option.
  -  Emacs: under construction.
+ -  KWrite-family: under construction.
 
 ## For the future:
- - [ ]  Finish the Emacs extension
  - [ ]  Fix UTF-associated problems for text files
- - [ ]  Remove Python-dependency in Vim extension
  - [ ]  Do whatever needs to be done for portions of this suite to run on just about any Windows, MacOS, BSD, or Linux system.
  - [ ]  Better handling of what is a text file and what is not.
  - [ ]  Resolve malfunction of global Tk theme changes.
