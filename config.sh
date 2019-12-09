@@ -44,6 +44,7 @@ DEFAULTDB="archive.db"
 DB="archive.db"
 DEFAULTDEX="index.xml"
 DEX="index.xml"
+GEDIR=$HOME"/.local/share/gedit/plugins"
 MARK="@@"
 VIMDIR=$HOME"/.vim"
 VIMRC=$HOME"/.vimrc"
@@ -53,6 +54,7 @@ PYTHONVAR=python3
 SQLITE=sqlite3
 NOVIM=0
 NOPY=0
+NOGE=0
 NOMACS=1
 
 
@@ -67,9 +69,11 @@ function usage
     echo "-D/--dbbin [=]     Path of alternate sqlite3 binary if not /usr/bin/sqlite3"
     echo "-e/--emacs [=]     Path of emacs configuration file (currently under construction)"
     echo "-E/--noemacs       Disable emacs configuration (currently under construction)"
+    echo "-g/--gedit [=]     Path to Gedit plugins if not ~/.local/share/gedit/plugins"
+    echo "-G/--nogedit       Disable Gedit plugin configuration"
     echo "-i/--index [=]     Path of silent xml file if not BASEDIR/index.xml"
     echo "-p/--python [=]    Path of alternate python binary if not PATH/python3"
-    echo "-P/--nopython      Disable python 3 configuration (currently under construction)"
+    echo "-P/--nopython      Disable python 3 configuration (also disables Gedit plugin)"
     echo "-u/--vimplug [=]   Name/type of vim plugin utility (plugin utility must be installed prior; default is to do nothing)"
     echo "                      If using Vim version >= 8, -u=8 may be used for builtin plugin functionality."
     echo "-v/--vimrc [=]     Path of vim startup script if not HOME/.vimrc"
@@ -451,6 +455,31 @@ function configure_python
 }
 
 
+function configure_gedit
+{
+    echo "Configuring Gedit plugin."
+    $PYTHONVAR pygconfig.py
+    if [ $? -ne 0 ]; then
+	echo "failed to configure gedit modules with python 3"
+	exit 1
+    fi
+    sed -i "s|^spec = importlib.util.spec_from_file_location.*|spec = importlib.util.spec_from_file_location(\"memo\", \"$LOC/memo/__init__.py\")|" $PWD/gedit/memobookns.py
+    sed -i "s|mb = memo.gmemobook.gMemobook(ctrl=.*|mb = memo.gmemobook.gMemobook(ctrl=\"$CONF\")|" $PWD/gedit/memobookns.py
+    if [ ! -d $GEDIR ]; then
+	mkdir -p $GEDIR
+	if [ $? -ne 0 ]; then
+	    echo "Could not create Gedit plugins directory."
+	    return 1
+	else
+	    echo "Created" $GEDIR
+	fi
+    fi
+    cp gedit/memobookns.plugin $GEDIR
+    cp gedit/memobookns.py $GEDIR
+    echo "Prepared Gedit plugin with directory" $GEDIR
+}
+
+
 function configure_emacs
 {
     ret_var=""
@@ -494,6 +523,12 @@ function parse # parse functions
 		VAR="${i#*=}"
 		[[ $VAR ]] || (echo "Unable to parse command-line switches"; exit 1)
 		EMACSCONF=${VAR/\~/${HOME}}
+		shift
+		;;
+	    -g=*|--gedit=*)
+		VAR="${i#*=}"
+		[[ $VAR ]] || (echo "Unable to parse command-line switches"; exit 1)
+		GEDIR=${VAR/\~/${$HOME}}
 		shift
 		;;
 	    -h|--help)
@@ -541,6 +576,10 @@ function parse # parse functions
 		NOMACS=1
 		shift
 		;;
+	    -G|--nogedit)
+		NOGE=1
+		shift
+		;;
 	    -P|--nopython)
 		NOPY=1
 		shift
@@ -567,6 +606,7 @@ parse "$@"
 configure_configs
 [ $NOVIM == 0 ] && configure_vim
 [ $NOPY == 0 ] && configure_python
+[ $NOPY == 0 ] && [ $NOGE == 0 ] && configure_gedit
 [ $NOMACS == 0 ] && configure_emacs
 
 

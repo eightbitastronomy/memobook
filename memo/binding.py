@@ -131,7 +131,7 @@ def _targeted_text(name,index=None):
                 #    newnt.text = newnt.text[:len(newnt.text)-1]
                 newnt.parse()
         if index: 
-            newnt.tags.silent = _index_search(index,name,newnt)
+            newnt.tags.silent = index_search(index,name,newnt)
     except Exception as e:
         raise Exception(e)
     else:
@@ -145,7 +145,7 @@ def _targeted_image(name,index=None):
         newnt.ID = name
         newnt.body = PIL.Image.open(name)
         newnt.mime = NoteMime.IMAGE
-        newnt.tags = Tag(_index_search(index,name,newnt))
+        newnt.tags = Tag(index_search(index,name,newnt))
     except TypeError as ke:
         return newnt
     except KeyError as ke:
@@ -163,7 +163,7 @@ def _targeted_pdf(name,index=None):
         newnt.ID = name
         newnt.body = convert_from_path(name)
         newnt.mime = NoteMime.PDF
-        newnt.tags = Tag(_index_search(index,name,newnt))
+        newnt.tags = Tag(index_search(index,name,newnt))
     except TypeError as ke:
         return newnt
     except KeyError as ke:
@@ -174,7 +174,7 @@ def _targeted_pdf(name,index=None):
         return newnt
 
 
-def _index_search(index,fname,note):
+def index_search(index,fname,note):
     try:
         target = None
         if index and ("file" in index.keys()):
