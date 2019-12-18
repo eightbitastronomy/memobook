@@ -128,12 +128,6 @@ class TextPage(Page):
         else:
             self.note = note.Note()
             self.note.mime = note.NoteMime.TEXT
-        self.create_search_bar()
-        if "search" in kwargs.keys():
-            if kwargs["search"] == "stop":
-                self.stop_search()
-            else:
-                self.start_search()
         if "case" in kwargs.keys():
             self.__search_hook_case = kwargs["case"]
         else:
@@ -146,10 +140,15 @@ class TextPage(Page):
             self.__search_hook_subst = kwargs["subst"]
         else:
             self.__search_hook_subst = ""
+        self.create_search_bar()
+        if "search" in kwargs.keys():
+            if kwargs["search"] == "stop":
+                self.stop_search()
+            else:
+                self.start_search()
         self.plate.pack(side=tkinter.BOTTOM,fill='both',expand=tkinter.YES)
         self.plate.bind("<Control-a>",lambda e: self.__highlight_all())
         self.plate.bind("<Control-f>",lambda e: self.__search_hook())
-
     def blank(self):
         if self._state == State.BLNK:
             if self.plate.edit_modified():
