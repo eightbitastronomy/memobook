@@ -91,9 +91,9 @@ class gMemobook(Memobook):
     def open_mark(self):
         def toggler(widg,var,logic):
             if widg.get_active():
-                dprint(3,"toggled: " + logic)
+                dprint(3,"\ntoggled: " + logic)
                 var.set(logic)
-        dprint(3,"gMemobook::open_mark::")
+        dprint(3,"\ngMemobook::open_mark::")
         logic_var = StrDynamic()
         logic_var.set("or")
         [width, height] = self.__window.get_size()
@@ -104,7 +104,7 @@ class gMemobook(Memobook):
         dprint(3,"size: " + str(width) + ", " + str(height))
         toc = [ item for item in self.data.toc() ]
         toc.sort(key=lambda x: x.lower())
-        dprint(3,"Initing dialog")
+        dprint(3,"\nIniting dialog...")
         getter = Gtk.Dialog("Open by mark",
                             None,
                             0,
@@ -112,7 +112,7 @@ class gMemobook(Memobook):
                              Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY))
         getter.set_default_size(width/2, height/2)
         getter_list = Gtk.ListStore(str)
-        dprint(3,"adding labels")
+        dprint(3,"adding labels...")
         for item in toc:
             getter_list.append([item])
         getter_tree = Gtk.TreeView(getter_list)
@@ -156,8 +156,8 @@ class gMemobook(Memobook):
 
             
     def __open_mark_confirm(self, widget, win, ls, logic):
-        dprint(3,"__open_mark_confirm")
-        dprint(3,ls)
+        dprint(3,"\n__open_mark_confirm")
+        dprint(3,"\n"+str(ls))
         if ls:
             if logic == "or":
                 notes = self.data.open_from_toc(ls)
@@ -170,11 +170,11 @@ class gMemobook(Memobook):
                                             Gtk.DialogFlags(2),
                                             0,
                                             (Gtk.STOCK_OK,Gtk.ResponseType.OK),
-                                            "Error: " + last)
+                                            "Error: " + str(last))
                     
                     msg.run()
                     msg.destroy()
-                    dprint(2,"Open error: " + str(last))
+                    dprint(2,"\nOpen error: " + str(last))
                 else:
                     failure = ", ".join(ls)
                     if logic == "or":
@@ -186,7 +186,7 @@ class gMemobook(Memobook):
 
                         msg.run()
                         msg.destroy()
-                        dprint(2,"Open failure")
+                        dprint(2,"\nOpen failure")
                     else:
                         msg = Gtk.MessageDialog(win,
                                                 Gtk.DialogFlags(2),
@@ -196,7 +196,7 @@ class gMemobook(Memobook):
                         msg.run()
                         msg.destroy()
                         dprint(2,"Unable to find files containing each of the following marks: " + failure)
-                    dprint(2,"returning")
+                    dprint(2,"...returning")
                     return Gtk.ResponseType.CANCEL
             else:
                 for nt in notes:
@@ -246,7 +246,7 @@ class gMemobook(Memobook):
 
 
     def save_note(self):
-        dprint(3,"gMemobook::save_note::")
+        dprint(3,"\ngMemobook::save_note::")
         doc = self.__window.get_active_document()
         Gedit.commands_save_document_async(doc,
                                            self.__window,
@@ -257,7 +257,7 @@ class gMemobook(Memobook):
 
 
     def save_note_as(self):
-        dprint(3,"gMemobook::save_note::")
+        dprint(3,"\ngMemobook::save_note::")
         doc = self.__window.get_active_document()
         f = doc.get_file()
         path = GtkSource.File.get_location(f).get_path()
@@ -272,7 +272,7 @@ class gMemobook(Memobook):
 
 
     def __save_note_hook(self,obj,res,dat):
-        dprint(3,"in save_note_hook")
+        dprint(3,"\nin save_note_hook...")
         result = Gedit.commands_save_document_finish(obj,res)
         dprint(3,"got result: " + str(result))
         if result == True:
@@ -285,16 +285,16 @@ class gMemobook(Memobook):
             else:
                 note = Note(dat)
                 note.ID = path
-            dprint(3,"Note to be saved: " + str(note.ID))
+            dprint(3,"...Note to be saved: " + str(note.ID))
             if self.data.save_note_nowrite(note):
-                dprint(1,"binding save error")
+                dprint(1,"\nbinding save error")
         else:
-            dprint(1,"Save did not occur")
+            dprint(1,"\nSave did not occur")
 
 
 
     def open_pop(self, hook_remove, hook_add, hook_apply):
-        dprint(3,"gMemobook::open_pop::")
+        dprint(3,"\ngMemobook::open_pop::")
         [width, height] = self.__window.get_size()
         if width < 200:
             width = 300
@@ -307,7 +307,7 @@ class gMemobook(Memobook):
         manager.set_default_geometry(width/2,height/2)
         manager.connect("destroy",lambda x: manager.destroy())
         source_list = Gtk.ListStore(str)
-        dprint(3,"adding labels")
+        dprint(3,"adding labels...")
         source_items = self.ctrl["db"]["scan"]
         if isinstance(source_items,str):
             source_items = [ source_items ]
@@ -400,24 +400,24 @@ class gMemobook(Memobook):
         def silent_add(stree,sentry,cmarks):
             model = stree.get_model()
             tmp_marks = parse.split_by_unknown(sentry.get_text())
-            dprint(3,"Marks to be added: " + str(tmp_marks))
+            dprint(3,"\nMarks to be added: " + str(tmp_marks))
             for tm in tmp_marks:
                 cmarks.append(tm)
                 model.append([tm])
             sentry.set_text("")
         def silent_apply(widget,nt,cmarks):
-            dprint(3,"Marks to be stored: " + str(cmarks))
+            dprint(3,"\nMarks to be stored: " + str(cmarks))
             self.data.update(nt,cmarks)
             widget.destroy()
             return
-        dprint(3,"gMemobook::mark_dialogue::")
+        dprint(3,"\ngMemobook::mark_dialogue::")
         doc = self.__window.get_active_document()
         path = GtkSource.File.get_location(doc.get_file()).get_path()
         dprint(3,"Got path: " + str(path))
         note = self.__get_note_ref(path)
         if not note:
             note = self.__make_note_ref(doc,path,True)
-        dprint(3,"Note is prepared.")
+        dprint(3,"...Note is prepared.")
         if not note:
             msg = Gtk.MessageDialog(self.__window,
                                     Gtk.DialogFlags(2),
@@ -444,7 +444,7 @@ class gMemobook(Memobook):
             current_marks = []
             if note.tags:
                 if note.tags.silent:
-                    dprint(3,"Silent tags: " + str(note.tags.silent))
+                    dprint(3,"\nSilent tags: " + str(note.tags.silent))
                     current_marks = list(note.tags.silent)
                     current_marks.sort()
                     for st in current_marks:
@@ -535,7 +535,7 @@ class gMemobook(Memobook):
             note.tags = Tag(parse.parse(docbody))
             note.tags.silent = index_search(self.index,docpath,None)
         except Exception as e:
-            dprint(1,"Error: " + str(e))
+            dprint(1,"\nError: " + str(e))
             return None
         else:
             self.__open_notes.append(note)

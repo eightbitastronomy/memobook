@@ -6,7 +6,7 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Then sure, you could grep your home directory to death. Or, this is the application for you.
 
 ## The Memobook Note Suite:
- -  Includes a Vim plugin, a windowed GUI, a Gedit plugin, and possibly upcoming Emacs and KWrite extensions
+ -  Includes a Vim plugin, a windowed GUI, a Gedit plugin, a GNU Emacs plugin, and possibly a future KWrite extension
  -  Can display image and pdf files too (read-only) with basic functionality (zooming, rotating, etc.) -- windowed GUI only.
  -  Stores information (your bookmarks) about the image & pdf files without altering them.
  -  Bookmarks in plaintext files can be tagged in the text itself, or can be "silently" added, i.e., recorded outside of the file
@@ -26,6 +26,9 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Currently has an option Python 3 dependency which can be removed so that it can run on a system having no Python.
  -  Configuration script for Vim currently supports vim-plug and pathogen utilities, as well as Vim 8+ plugin functionality. For other plugin methods, it's currently DIY.
 
+### The GNU Emacs extension:
+ -  Currently requires Python 3 for its source scan functionality.
+
 ### The Gedit plugin:
  -  Requires Python 3 and PyGObject. PyGObject must be new enough to have Gtk 3+ and Gedit 3+ submodules.
 
@@ -44,7 +47,7 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Windowed GUI: operates much like any other windowed text editor. Use 'Sources' menu for specifying and scanning directories for your existing (if any) bookmarked text files. Scanning will also load (if any) silent marks that are associated with image, pdf, and text files. Under the 'Edit' menu marks may be managed/inserted. To run from the command line, type 'memobook'. Running as a desktop app is currently DIY, but...There's no icon included with these files. (The struggle is real.)
  -  Vim: User preference may vary quite widely, so feel free to edit the plugin/memobook.vim to get desired key mappings. Please see doc/memobook.txt for mappings and command information.
  -  Gedit: Alt-m brings up an open-by-mark dialogue. Under Tools->Memobook are basic options. Please make a special note of the menu items Save (with Marks) amd Save As (with Marks). They are necessary to save mark information into the memobook. These two items will do their memobook magic while Gedit does its own file-saving magic. If a file is saved without them, mark information will not be recorded. I admit this is clumsy, but until I find a better way, this was the best option.
- -  Emacs: under construction.
+ -  Emacs: in memobook minor mode, all functions begin with alt-m. Then... m (mark search or), Ctrl-m (mark search and), n (add silent mark), Ctrl-n (manage silents), s (scan sources), Ctrl-s (manage sources), c (clear sources).
  -  KWrite-family: under construction.
 
 ## For the future:

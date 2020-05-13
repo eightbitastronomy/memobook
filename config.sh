@@ -37,7 +37,7 @@
 
 
 
-LOC=$PWD
+LOC=$PWD/installed
 DEFAULTCONF="conf.xml"
 CONF="conf.xml"
 DEFAULTDB="archive.db"
@@ -49,26 +49,26 @@ MARK="@@"
 VIMDIR=$HOME"/.vim"
 VIMRC=$HOME"/.vimrc"
 VIMPLUG=""
-EMACSCONF=$HOME"/.emacsconf.txt"
+EMACSCONF=$HOME"/.emacs.d/init.el"
 PYTHONVAR=python3
 SQLITE=sqlite3
 NOVIM=0
 NOPY=0
 NOGE=0
-NOMACS=1
+NOMACS=0
 
 
 
 function usage
 {
     echo "Configuration script for Memobook Note Suite:"
-    echo "Will automatically setup suite from PWD, or the following variables may be set:"
-    echo "-b/--basedir [=]   Path to Memobook directory containing pad.py and source subdirectories. Default is PWD"
+    echo "Will automatically setup suite from PWD/installed, or the following variables may be set:"
+    echo "-b/--basedir [=]   Path to Memobook directory containing pad.py and source subdirectories. Default is PWD/installed"
     echo "-c/--conf [=]      Path to configuration xml file if not BASEDIR/conf.xml"
     echo "-d/--dbfile [=]    Path of sqlite3 database file if not BASEDIR/archive.db"
     echo "-D/--dbbin [=]     Path of alternate sqlite3 binary if not /usr/bin/sqlite3"
-    echo "-e/--emacs [=]     Path of emacs configuration file (currently under construction)"
-    echo "-E/--noemacs       Disable emacs configuration (currently under construction)"
+    echo "-e/--emacs [=]     Path to GNU emacs configuration file if not ~/.emacs.d/init.el"
+    echo "-E/--noemacs       Disable GNU emacs configuration"
     echo "-g/--gedit [=]     Path to Gedit plugins if not ~/.local/share/gedit/plugins"
     echo "-G/--nogedit       Disable Gedit plugin configuration"
     echo "-i/--index [=]     Path of silent xml file if not BASEDIR/index.xml"
@@ -76,9 +76,9 @@ function usage
     echo "-P/--nopython      Disable python 3 configuration (also disables Gedit plugin)"
     echo "-u/--vimplug [=]   Name/type of vim plugin utility (plugin utility must be installed prior; default is to do nothing)"
     echo "                      If using Vim version >= 8, -u=8 may be used for builtin plugin functionality."
-    echo "-v/--vimrc [=]     Path of vim startup script if not HOME/.vimrc"
-    echo "-w/--vimdir [=]    Path of vim directory if not HOME/.vim"
-    echo "-V/--novim         Disable emacs configuration (currently under construction)"
+    echo "-v/--vimrc [=]     Path of vim startup script if not ~/.vimrc"
+    echo "-w/--vimdir [=]    Path of vim directory if not ~/.vim"
+    echo "-V/--novim         Disable vim configuration (currently under construction)"
 }
 
 
@@ -482,7 +482,26 @@ function configure_gedit
 
 function configure_emacs
 {
-    ret_var=""
+    local ret_var=""
+    echo "Configuring Emacs plugin."
+    resolve_path_and_name "${EMACSCONF}" "${HOME}"
+    [[ ! $ret_var ]] && echo "failed to set emacs init.el location" && exit 1
+    EMACSCONF=$ret_var
+    echo "Resolved emacs init.el: " $EMACSCONF
+    if [ ! -e $EMACSCONF ]; then
+	echo "(add-to-list 'load-path \"${LOC}/emacs\"" > $EMACSCONF
+	echo "(require 'memobook-mode)" >> $EMACSCONF
+    else
+	sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\"\n(require 'memobook-mode)" $EMACSCONF 
+    fi
+    # edit in-place for memo variables
+    sed -i "s|(defvar MB-loc \".*\"|(defvar MB-loc \"${LOC}\"|" "emacs/memobook-mode.el"
+    sed -i "s|(defvar MB-db \".*\"|(defvar MB-db \"${DB}\"|" "emacs/memobook-mode.el"
+    sed -i "s|(defvar MB-index \".*\"|(defvar MB-index \"${DEX}\"|" "emacs/memobook-mode.el"
+    sed -i "s|(defvar MB-conf \".*\"|(defvar MB-conf \"${CONF}\"|" "emacs/memobook-mode.el"
+    sed -i "s|\"sqlite3 |\"${SQLITE} |g" "emacs/memobook-mode.el"
+    cp -r emacs/ $LOC/
+    echo "Prepared GNU Emacs el files with initialization file" $EMACSCONF
 }
 
 
@@ -491,7 +510,20 @@ function configure_emacs
 function parse # parse functions
 {
     local ret_var=""
-
+    # check whether user has called this script with some amount of care
+    if [ -z "$@" ]; then
+	while true; do
+	    read -p "Do you wish to continue with configuration without altering any options? [yN]" yn
+	    case $yn in
+		[Yy]* ) break;;
+		[Nn]* )
+		    echo "Aborting. The following configuration options are available via -h."
+		    exit;;
+		* ) echo "Please answer [y]es or [n]o.";;
+	    esac
+	    done
+    fi
+    # rock n roll
     for i in "$@"
     do
 	case $i in

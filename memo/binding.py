@@ -30,6 +30,7 @@ import sys
 import magic
 import sqlite3
 import PIL
+from io import BufferedReader, TextIOWrapper
 import memo.parse as parse
 import memo.extconf as extconf
 from pdf2image import convert_from_path
@@ -112,24 +113,48 @@ def _mime_open(fname,index=None):
             return _targeted_image(fname,index)
         if tmp_type.find("pdf") >= 0:
             return _targeted_pdf(fname,index)
+        dprint(3,"Magic type: " + tmp_type)
+        return _targeted_unknown(fname,index)
         return None
+
+
+def _targeted_unknown(name,index=None):
+    try:
+        with open(name,"rb") as file_handle:
+            #if file_handle is not None: #I think this is unnecessary. open should throw an exception if it can't open the file.
+            buffered = BufferedReader(file_handle)
+            wrapped = TextIOWrapper(buffered)
+            newnt = Note()
+            newnt.title = os.path.basename(name)
+            newnt.ID = name
+            newnt.body = ""
+            newnt.mime = NoteMime.TEXT
+            for l in wrapped:
+                newnt.body += l
+            newnt.parse()
+        if index: 
+            newnt.tags.silent = index_search(index,name,newnt)
+    except Exception as e:
+        raise Exception(e)
+    else:
+        return newnt
 
     
 def _targeted_text(name,index=None):
     try:
         with open(name,"r") as file_handle:
-            if file_handle is not None:
-                newnt = Note()
-                newnt.title = os.path.basename(name)
-                newnt.ID = name
-                newnt.body = ""
-                newnt.mime = NoteMime.TEXT
+            #if file_handle is not None:  #I think this is unnecessary. open should throw an exception if it can't open the file.
+            newnt = Note()
+            newnt.title = os.path.basename(name)
+            newnt.ID = name
+            newnt.body = ""
+            newnt.mime = NoteMime.TEXT
             for l in file_handle.readlines():
                 newnt.body += l
                 #askopenfilenames does not leave the "10" char, and this next command removes its line feeds.#
                 #if curses.ascii.isctrl(newnt.text[len(newnt.text)-1]):
                 #    newnt.text = newnt.text[:len(newnt.text)-1]
-                newnt.parse()
+            newnt.parse()
         if index: 
             newnt.tags.silent = index_search(index,name,newnt)
     except Exception as e:

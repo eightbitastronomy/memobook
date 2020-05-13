@@ -68,19 +68,19 @@ class MNSAppActivatable(GObject.Object, Gedit.AppActivatable):
     def __init__(self):
         GObject.Object.__init__(self)
         global mb
-        memo.config.dprint(3,"MNSApp init")
+        memo.config.dprint(3,"\nMNSApp init")
         if not mb:
             mb = memo.gmemobook.gMemobook(ctrl="./conf.xml")
             memo.config.dprint(3,"...Memobook initialized")
 
         
     def do_activate(self):
-        memo.config.dprint(3,"MNSApp do_activate")
+        memo.config.dprint(3,"\nMNSApp do_activate")
         self._build_menu()
         
         
     def _build_menu(self):
-        memo.config.dprint(3,"MNSApp _build_menu")
+        memo.config.dprint(3,"\nMNSApp _build_menu")
         #self.app.add_accelerator("<Primary><Alt>O", "win.open_by_mark", None)
         menu_ext  = self.extend_menu("file-section")
         self.menu_items.append(Gio.MenuItem.new(_("Open by mark"), "win.open_by_mark"))
@@ -104,12 +104,12 @@ class MNSAppActivatable(GObject.Object, Gedit.AppActivatable):
         
     def do_deactivate(self):
         global mb
-        memo.config.dprint(3,"MNSApp do_deactivate")
+        memo.config.dprint(3,"\nMNSApp do_deactivate")
         self._remove_menu()
         mb.exit_all(None)
         
     def _remove_menu(self):
-        memo.config.dprint(3,"MNSApp _remove_menu")
+        memo.config.dprint(3,"\nMNSApp _remove_menu")
         # removing accelerator and destroying menu items
         self.app.set_accels_for_action("win.open_by_mark", ())
         self.menu_ext = None
@@ -126,20 +126,20 @@ class MNSWindowActivatable(GObject.Object, Gedit.WindowActivatable):
     def __init__(self):
         GObject.Object.__init__(self)
         global mb
-        memo.config.dprint(3,"MNSWindow init")
+        memo.config.dprint(3,"\nMNSWindow init")
         self.__mb_hook = mb.add_window_hook(self.window)
         
     def do_update_state(self):
-        memo.config.dprint(3,"MNSWindow do_update_state")
+        memo.config.dprint(3,"\nMNSWindow do_update_state")
         if self.window.get_active_view() is not None:
             self.window.lookup_action('open_by_mark').set_enabled(True)
             
     def do_activate(self):
-        memo.config.dprint(3,"MNSWindow do_activate")
+        memo.config.dprint(3,"\nMNSWindow do_activate")
         self._connect_menu()
         
     def _connect_menu(self):
-        memo.config.dprint(3,"MNSWindow _connect_menu")
+        memo.config.dprint(3,"\nMNSWindow _connect_menu")
         refs = ( ('open_by_mark', self.__hook_open_mark),
                  ('save_with_mark', self.__hook_save),
                  ('save_as_with_mark', self.__hook_save_as),
@@ -155,45 +155,45 @@ class MNSWindowActivatable(GObject.Object, Gedit.WindowActivatable):
         
     def __hook_open_mark(self, action, data):
         global mb
-        memo.config.dprint(3,"MNSWindow __hook_open_mark")
+        memo.config.dprint(3,"\nMNSWindow __hook_open_mark")
         mb.select_window_hook(self.window)
         mb.open_mark()
 
 
     def __hook_save(self, action, data):
         global mb
-        memo.config.dprint(3,"MNSWindow __hook_save")
+        memo.config.dprint(3,"\nMNSWindow __hook_save")
         mb.select_window_hook(self.window)
         mb.save_note()
 
 
     def __hook_save_as(self, action, data):
         global mb
-        memo.config.dprint(3,"MNSWindow __hook_save")
+        memo.config.dprint(3,"\nMNSWindow __hook_save")
         mb.select_window_hook(self.window)
         mb.save_note_as()
 
 
     def __hook_manage(self, action, data):
         global mb
-        memo.config.dprint(3,"MNSWindow __hook_manage")
+        memo.config.dprint(3,"\nMNSWindow __hook_manage")
         mb.select_window_hook(self.window)
         mb.open_pop(mb.open_pop_remove,mb.open_pop_add,mb.open_pop_apply)
 
 
     def __hook_silent(self, action, data):
         global mb
-        memo.config.dprint(3,"MNSWindow __hook_silent")
+        memo.config.dprint(3,"\nMNSWindow __hook_silent")
         mb.select_window_hook(self.window)
         mb.mark_dialogue()
 
         
     def do_deactivate(self):
-        memo.config.dprint(3,"MNSWindow do_deactivate")
+        memo.config.dprint(3,"\nMNSWindow do_deactivate")
 
         
     def do_create_configure_widget(self):
-        memo.config.dprint(3,"MNSWindow do_create_configure_widget")
+        memo.config.dprint(3,"\nMNSWindow do_create_configure_widget")
         box=Gtk.Box()
         box.add(Gtk.Label("Settings? Use Scan, Clear, and Manage. Email eightbitastronomy@protonmail.com if this plugin isn't working."))
         return box
