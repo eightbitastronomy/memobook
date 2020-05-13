@@ -33,7 +33,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import GObject, Gtk, Gedit, Gio
 import sys
 import importlib.util
-spec = importlib.util.spec_from_file_location("memo", "memo/__init__.py")
+spec = importlib.util.spec_from_file_location("memo", "./memo/__init__.py")
 memo = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = memo
 spec.loader.exec_module(memo)

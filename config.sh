@@ -267,6 +267,7 @@ function plugin_vimplug  # (vimdir,vimrc,loc)
     sed -i "/call plug#begin(/aPlug '${3}'" $2
     cp -r autoload/ $LOC/
     cp -r plugin/ $LOC/
+    cp -r doc/ $LOC/
 }
 
 
@@ -489,11 +490,11 @@ function configure_emacs
     EMACSCONF=$ret_var
     echo "Resolved emacs init.el: " $EMACSCONF
     if [ ! -e $EMACSCONF ]; then
-	echo "(add-to-list 'load-path \"${LOC}/emacs\"" > $EMACSCONF
+	echo "(add-to-list 'load-path \"${LOC}/emacs\")" > $EMACSCONF
 	echo "(require 'memobook-mode)" >> $EMACSCONF
     else
 	if [ -f $EMACSCONF ]; then
-	    sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\"\n(require 'memobook-mode)" $EMACSCONF
+	    sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\")\n(require 'memobook-mode)" $EMACSCONF
 	else
 	    echo "Failed to write changes to" $EMACSCONF ": path exists and is not a regular file."
 	fi
@@ -523,6 +524,7 @@ function parse # parse functions
 		[Yy]* ) break;;
 		[Nn]* )
 		    echo "Aborting. The following configuration options are available via -h."
+		    usage
 		    exit;;
 		* ) echo "Please answer [y]es or [n]o.";;
 	    esac

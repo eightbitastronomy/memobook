@@ -62,13 +62,13 @@
 
 (make-variable-buffer-local (defvar memobook-mode nil))
 
-(make-variable-buffer-local (defvar MB-loc "/home/travertine/code/memobook"))
+(make-variable-buffer-local (defvar MB-loc "."))
 
-(make-variable-buffer-local (defvar MB-db "/home/travertine/code/memobook/archive.db"))
+(make-variable-buffer-local (defvar MB-db "./archive.db"))
 
-(make-variable-buffer-local (defvar MB-index "/home/travertine/code/memobook/index.xml"))
+(make-variable-buffer-local (defvar MB-index "./index.xml"))
 
-(make-variable-buffer-local (defvar MB-conf "/home/travertine/code/memobook/conf.xml"))
+(make-variable-buffer-local (defvar MB-conf "./conf.xml"))
 
 (make-variable-buffer-local (defvar MB-tag "@@"))
 
