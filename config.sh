@@ -492,13 +492,18 @@ function configure_emacs
 	echo "(add-to-list 'load-path \"${LOC}/emacs\"" > $EMACSCONF
 	echo "(require 'memobook-mode)" >> $EMACSCONF
     else
-	sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\"\n(require 'memobook-mode)" $EMACSCONF 
+	if [ -f $EMACSCONF ]; then
+	    sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\"\n(require 'memobook-mode)" $EMACSCONF
+	else
+	    echo "Failed to write changes to" $EMACSCONF ": path exists and is not a regular file."
+	fi
     fi
     # edit in-place for memo variables
     sed -i "s|(defvar MB-loc \".*\"|(defvar MB-loc \"${LOC}\"|" "emacs/memobook-mode.el"
     sed -i "s|(defvar MB-db \".*\"|(defvar MB-db \"${DB}\"|" "emacs/memobook-mode.el"
     sed -i "s|(defvar MB-index \".*\"|(defvar MB-index \"${DEX}\"|" "emacs/memobook-mode.el"
     sed -i "s|(defvar MB-conf \".*\"|(defvar MB-conf \"${CONF}\"|" "emacs/memobook-mode.el"
+    sed -i "s|(defvar MB-tag \".*\"|(defvar MB-tag \"${MARK}\"|" "emacs/memobook-mode.el"
     sed -i "s|\"sqlite3 |\"${SQLITE} |g" "emacs/memobook-mode.el"
     cp -r emacs/ $LOC/
     echo "Prepared GNU Emacs el files with initialization file" $EMACSCONF

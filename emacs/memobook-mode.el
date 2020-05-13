@@ -70,6 +70,8 @@
 
 (make-variable-buffer-local (defvar MB-conf "/home/travertine/code/memobook/conf.xml"))
 
+(make-variable-buffer-local (defvar MB-tag "@@"))
+
 (make-variable-buffer-local (defvar MB-read-by-mark 'arch-sqlite3-read-by-mark))
 
 (make-variable-buffer-local (defvar MB-add-mark 'arch-sqlite3-add-mark))
@@ -845,7 +847,7 @@
 
       (goto-char (point-min))
 
-      (while (re-search-forward "@@[a-z\-0-9]+" nil t)
+      (while (re-search-forward (concat MB-tag "[a-z\-0-9]+") nil t)
 
 	(setq bufstr (match-string 0))
 	
