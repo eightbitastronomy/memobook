@@ -62,13 +62,13 @@
 
 (make-variable-buffer-local (defvar memobook-mode nil))
 
-(make-variable-buffer-local (defvar MB-loc "."))
+(make-variable-buffer-local (defvar MB-loc "/home/travertine/code/memobook"))
 
-(make-variable-buffer-local (defvar MB-db "./archive.db"))
+(make-variable-buffer-local (defvar MB-db "/home/travertine/code/memobook/archive.db"))
 
-(make-variable-buffer-local (defvar MB-index "./index.xml"))
+(make-variable-buffer-local (defvar MB-index "/home/travertine/code/memobook/index.xml"))
 
-(make-variable-buffer-local (defvar MB-conf "./conf.xml"))
+(make-variable-buffer-local (defvar MB-conf "/home/travertine/code/memobook/conf.xml"))
 
 (make-variable-buffer-local (defvar MB-read-by-mark 'arch-sqlite3-read-by-mark))
 
@@ -114,6 +114,7 @@
 	  (setq memobook-mode 1)
 	  (make-save-hook)
 	  ;(princ (key-binding "M-m C-b")) ;;M-m appears to be unbound, but C-m like Vim is tied to Return key
+	  (local-set-key (kbd "M-m w") 'mb-write-marks)            ; WRITE MARKS WITHOUT SAVE
 	  (local-set-key (kbd "M-m s") 'mb-source-scan)            ; SCAN SOURCE DIRECTORIES
 	  (local-set-key (kbd "M-m C-s") 'mb-source-manage)        ; MANAGE SOURCE DIRECTORIES
 	  (local-set-key (kbd "M-m c") 'mb-source-clear)           ; CLEAR DATABASE
@@ -137,17 +138,18 @@
       
       (progn "disabled"
 
-	(setq memobook-mode nil)
-	(local-unset-key (kbd "M-m s"))
-	(local-unset-key (kbd "M-m C-s"))
-	(local-unset-key (kbd "M-m c"))
-	(local-unset-key (kbd "M-m n"))
-	(local-unset-key (kbd "M-m C-n"))
-	(local-unset-key (kbd "M-m m"))
-	(local-unset-key (kbd "M-m C-m"))
-	(unmake-save-hook)
+	     (setq memobook-mode nil)
+	     (local-unset-key (kbd "M-m w"))
+	     (local-unset-key (kbd "M-m s"))
+	     (local-unset-key (kbd "M-m C-s"))
+	     (local-unset-key (kbd "M-m c"))
+	     (local-unset-key (kbd "M-m n"))
+	     (local-unset-key (kbd "M-m C-n"))
+	     (local-unset-key (kbd "M-m m"))
+	     (local-unset-key (kbd "M-m C-m"))
+	     (unmake-save-hook)
 
-	) ; progn disabled
+	     ) ; progn disabled
 
       ) ; if enable
     
@@ -667,6 +669,25 @@
 
   (shell-command-to-string (concat "python3 " MB-loc "/memod.py --ctrl=" MB-conf " --populate"))
   (princ "Memobook database populated.")
+  
+  )
+
+
+
+
+
+
+
+(defun mb-write-marks ()
+  "Call write-marks function directly, i.e., write marks without saving buffer to disk"
+  (interactive)
+
+  (if (not (buffer-file-name))
+      nil
+    (progn
+      (write-marks)
+      (princ (concat "Bookmarks written for " (buffer-file-name)))
+      ))
   
   )
 
@@ -1201,7 +1222,8 @@
 	(record-stop nil)
 	(record-pair nil)
 	(type-holder nil)
-	(curr-pt 0))
+	(curr-pt 0)
+	(new-line-flag nil))
 
     (if (numberp type)
 	(setq type-holder (number-to-string type))
@@ -1218,7 +1240,19 @@
 
       (setq record-start (car record-pair))
       (setq record-stop (cadr record-pair))
-      (delete-region record-start record-stop)
+
+      (if (not (= record-start record-stop))
+	  
+	  (delete-region record-start record-stop)
+	
+	(progn "new"
+	       (goto-char record-start)
+	       (setq type-holder "0")
+	       (setq new-line-flag t)
+	       ) ; progn new
+	
+	) ; if not =
+      
       (insert (concat "<file type=\"" type-holder "\">\n"))
       (insert (concat "      <loc>" loc "</loc>\n"))
 
@@ -1226,7 +1260,9 @@
 	(insert (concat "      <mark>" (car marks) "</mark>\n"))
 	(setq marks (cdr marks)))
 
-      (insert "    </file>")
+      (if new-line-flag
+	  (insert "    </file>\n    ")
+	(insert "    </file>"))
 
       ) ; with-temp-file
     
@@ -1506,15 +1542,19 @@
 	(file-end -1)
 	(loc-start -1)
 	(loc-stop -1)
-	(break-flag nil))
+	(break-flag -1)   ; 0 is success, 1 is reached-the-end, 2 is unclosed-tag
+	(first-file -1))
 
-    (while (not break-flag)
+    (while (= break-flag -1)
       
       (if (re-search-forward "<file " nil t)
 	  
 	  (progn "file open"
 
 		 (setq file-begin (- (point) 6))
+
+		 (if (= first-file -1)
+		     (setq first-file file-begin))
 		 
 		 (if (re-search-forward "</file>" nil t)
 		     
@@ -1537,7 +1577,7 @@
 						  
 						  (if (string= (buffer-substring loc-start loc-stop) loc)
 						      (progn "found"
-							     (setq break-flag t)
+							     (setq break-flag 0)
 							     (setq target (list file-begin file-end))
 							     )) ; progn found, if string=
 						  
@@ -1551,18 +1591,22 @@
 			     
 			    ) ; progn file close
 		   
-		   (setq break-flag t)
+		   (setq break-flag 2)
 		   
 		   ) ; if re-search /file
 		   
 		 ) ; progn "file open"
 
-	(setq break-flag t)
+	(setq break-flag 1)
 
 	) ; if re-search file
       
       ) ; while not break-flag
 
+    ; test for reached-the-end and set target accordingly. In any other case, target should be untouched.
+    (if (= break-flag 1)
+	(setq target (list first-file first-file)))
+	
     target
     
     ) ; let contents

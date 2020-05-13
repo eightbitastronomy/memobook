@@ -1,0 +1,63 @@
+Memobook Note Suite
+Author: eightbitastronomy
+License: see file, LICENSE, provided with source code.
+
+
+Emacs interface to Memobook functionality:
+
+
+
+Memobook-mode is loaded as a minor mode upon visiting a text file. It may be enabled or disabled in
+the usual way, i.e., by Alt-x memobook-mode. 
+
+
+
+The following table describes interface calls and keystrokes.
+
+
+
+Keystroke       Name (use with Alt-x)   Function 
+--------------------------------------------------------------------------------------
+Alt-m m         mb-readmarks-or         Find file by mark, OR (union of marks). See 
+                                         Find/Region, below.
+Alt-m Ctrl-m    mb-readmarks-and        Find file by mark, AND (intersection of marks. 
+                                         See Find/Region, below.
+Alt-m n         mb-silentmark-add       Add silent mark for current buffer. See 
+                                         Find/Region, below.
+Alt-m Ctrl-n    mb-silentmark-manage    Select marks to be added or removed from current 
+                                         buffer's silent marks.
+Alt-m c         mb-source-clear         Clear memobook database of entries.
+Alt-m s         mb-source-scan          Scan each source directory for files containing
+                                         bookmarks.
+Alt-m Ctrl-s    mb-source-manage        Select directories to be added or removed from
+                                         current buffer's scan directories.
+Alt-m w         mb-write-marks          Write marks for current buffer without saving 
+                                         the current buffer. See reading and writing.
+----------------------------------------------------------------------------------------
+
+
+
+Find/Region functions:
+    Several functions behave differently depending on the position of the cursor, (aka, point).
+      1. If nothing lies beneath the point and no region is selected, the user will be prompted for input.
+      2. If a word lies beneath the point, this word will be used as input.
+      3. If a region is highlighted, i.e., marked, then the region will be used as input.
+    Because of this behavior, if the user wishes to enter input manually, calling the function by name
+is preferable. At any time, Alt-x <function-name> will call the function with the behavior of #1 above.
+
+
+
+Reading and writing of marks:
+    Each visited file has its own buffer-local information. Alteration of, e.g., silent marks in one 
+buffer will not affect silent marks in another. That said, upon reading a file into an Emacs buffer,
+no bookmark information is loaded. Such information is loaded ad-hoc, or, as needed. Hence, silent marks
+are loaded the first time a silent-mark function is called.
+    When a file is saved (while memobook-mode is enabled of course), the file is searched for bookmarks
+according to the @@ tag. (TO-DO: allow different tags). Silent marks and open marks are compared with 
+the database and index files, and changes are written. If Emacs says a file is unmodified and therefore
+will not call a save-hook, then no mark information will be written to the database or index. Hence, call
+mb-write-marks.
+    If a file is loaded via memobook function (such as mb-readmarks-or), the buffer is not made current.
+In other words, files are loaded into other buffers, and the user must switch to them.
+    Function mb-write-marks only operates on the current buffer. However, if the current buffer has no
+associated file, the function will fail silently.
