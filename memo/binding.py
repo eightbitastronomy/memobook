@@ -40,7 +40,7 @@ from memo.config import dprint
 
 class Binding():
     _src = None   # could file base directory, database connection
-    _error = []
+    _error = None
     _text_hook = None
     _img_hook = None
     _pdf_hook = None
@@ -237,8 +237,10 @@ def index_search(index,fname,note):
 
 class FileBinding(Binding):
     __ctrl = None
-    __toc = {}
+    __toc = None
     def __init__(self,ctrl):       # an ExternalConfiguration is still required because I may want to use encoding options, etc, as the project grows
+        self._error = []
+        self.__toc = {}
         self.__ctrl = ctrl
         src = ctrl["loc"]
         if src is None:
@@ -445,6 +447,7 @@ class DatabaseBinding(Binding):
     
     def __init__(self,ctrl):
         dprint(3,"\nDatabaseBinding::init")
+        self._error = []
         self.__ctrl = ctrl
         #the following assumes a relative path, but the config script will
         #use an absolute one so that the user may call memobook from any PWD

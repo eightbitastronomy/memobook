@@ -49,11 +49,12 @@ class State(enum.Enum):
 class Page:
     '''Prototype for pages in memobook'''
     _blank = True
-    _state = State.BLNK
+    _state = None
     tab = None
     plate = None
     note = None
     def __init__(self,win,**kwargs):
+        self._state = State.BLNK
         pass
     def setnotblank(self):
         self._state = State.NBLNK
@@ -102,6 +103,7 @@ class TextPage(Page):
     __search_research = False
     __search_hook_case = None
     def __init__(self,win,**kwargs):
+        Page.__init__(self,win,**kwargs)
         self.tab = Frame(win)
         self.search = None
         self.tab.pack(fill='both',expand=tkinter.YES)
@@ -396,6 +398,7 @@ class ImagePage(Page):
     def __init__(self,win,nt,**kwargs):
         ### tab and plate must be handled differently than for TextPage...
         ### b/c I built TextCompound and ImageCanvas in an inherently different way.
+        Page.__init__(self,win,**kwargs)
         if "size" in kwargs.keys():
             self.plate = ImageCanvas(win,source=nt.body,fontadjust=kwargs["size"])
         else:
@@ -418,6 +421,7 @@ class PDFPage(Page):
     '''PDF-encapsulating Page'''
     def __init__(self,win,nt,**kwargs):
         ### tab and plate must be handled differently than for TextPage...
+        Page.__init__(self,win,**kwargs)
         if "size" in kwargs.keys():
             self.plate = PDFCanvas(win,source=nt.body,fontadjust=kwargs["size"])
         else:

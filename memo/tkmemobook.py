@@ -80,12 +80,13 @@ class TkMemobook(Memobook):
     root = None
     tabs = None
     menu = None
-    offset = []
+    offset = None
     
 
     def __init__(self,**kwargs):
         dprint(3,"\nTkMemobook::__init__::")
         Memobook.__init__(self,**kwargs)
+        self.offset = []
         if "root" in kwargs.keys():
             self.root = kwargs["root"]
         else:

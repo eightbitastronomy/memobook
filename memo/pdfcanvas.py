@@ -35,14 +35,18 @@ from memo.scrolledcanvas import ScrolledCanvas
 
 class PDFCanvas(ScrolledCanvas):
 
-    __src_tk = []
+    __src_tk = None #[]
     __current = 0
-    __sz = []
-    __pos = []
-    __rot= []
+    __sz = None #[]
+    __pos = None #[]
+    __rot= None #[]
     
     def __init__(self, master, **kwargs):
         ScrolledCanvas.__init__(self,master,**kwargs)
+        self.__src_tk = []
+        self.__sz = []
+        self.__pos = []
+        self.__rot = []
         for doc in self._src:
             self.__sz.append(doc.size)
             self.__pos.append([0.,0.])

@@ -141,7 +141,7 @@ class Book(NotebookCloseTab):
     '''Notebook class for use with Memobook'''
 
     _l = -1             # tracks num of blank tabs
-    _pgs = []           # the pages associated with tabs
+    _pgs = None         # the pages associated with tabs
     _save_hook = None   # save page callback fctn
     _close_hook = None  # close page callback fctn
     _ctrl = None        # Configuration pointer
@@ -154,6 +154,7 @@ class Book(NotebookCloseTab):
         if "ruling" in kwargs:
             self._ctrl = kwargs["ruling"]
             del kwargs["ruling"]
+        self._pgs = []
         NotebookCloseTab.__init__(self,*args,**kwargs)
         self.__search_case = BooleanVar()
         self.__search_phrase = StringVar()
@@ -198,13 +199,16 @@ class Book(NotebookCloseTab):
             self.select( len(self._pgs)-1 )
 
     def newpage(self,nt):
+        dprint(3,"\nBook::newpage::")
         if nt is None:
             # Error, or called by a double-click event (binding in memobook). Blank-text and return.
+            dprint(3,"note arg is None")
             self.__blanktext(None)
             blank = self._pgs[len(self._pgs)-1]
             self.__ready(blank)
             return
         if self._pgs:
+            dprint(3,"Pages (_pgs) are present")
             # tabs are already present, focus on the last...
             curindex = self.index("current")
             curpg = self._pgs[curindex]
@@ -215,6 +219,8 @@ class Book(NotebookCloseTab):
                 self.forget(curindex)
                 self.event_generate("<<NotebookTabClosed>>")
                 self._l -= 1
+            else:
+                dprint(3,"\nBook::newpage::current page is not blank")
         # make a new page based on mime-type
         newpg = None
         if nt.mime == NoteMime.TEXT:

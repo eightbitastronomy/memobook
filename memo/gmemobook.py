@@ -71,12 +71,14 @@ class gMemobook(Memobook):
 
     '''Memobook Gtk plugin interface'''
 
-    __window_hook = []
+    __window_hook = None
     __window = None
-    __open_notes = []
+    __open_notes = None
     
     def __init__(self, **kwargs):
         Memobook.__init__(self,**kwargs)
+        self.__window_hook = []
+        self.__open_notes = []
 
     def add_window_hook(self, ref):
         self.__window_hook.append(ref)
