@@ -76,11 +76,12 @@ class gMemobook(Memobook):
     __open_notes = None
     
     def __init__(self, **kwargs):
-        Memobook.__init__(self,**kwargs)
+        Memobook.__init__(self, **kwargs)
         self.__window_hook = []
         self.__open_notes = []
 
     def add_window_hook(self, ref):
+        '''Add reference to current GEdit window'''
         self.__window_hook.append(ref)
         return self.__window_hook[len(self.__window_hook)-1]
 
@@ -88,14 +89,17 @@ class gMemobook(Memobook):
         pass
 
     def select_window_hook(self, ref):
+        '''Set reference to window. Currently unused.'''
         self.__window = ref
         
     def open_mark(self):
-        def toggler(widg,var,logic):
+        '''Open files by mark. Major dialogue.'''
+        def toggler(widg, var, logic):
+            # subfunction for toggling AND/OR search logic:
             if widg.get_active():
-                dprint(3,"\ntoggled: " + logic)
+                dprint(3, "\ntoggled: " + logic)
                 var.set(logic)
-        dprint(3,"\ngMemobook::open_mark::")
+        dprint(3, "\ngMemobook::open_mark::")
         logic_var = StrDynamic()
         logic_var.set("or")
         [width, height] = self.__window.get_size()
@@ -103,10 +107,10 @@ class gMemobook(Memobook):
             width = 300
         if height < 200:
             height = 250
-        dprint(3,"size: " + str(width) + ", " + str(height))
+        dprint(3, "size: " + str(width) + ", " + str(height))
         toc = [ item for item in self.data.toc() ]
         toc.sort(key=lambda x: x.lower())
-        dprint(3,"\nIniting dialog...")
+        dprint(3, "\nIniting dialog...")
         getter = Gtk.Dialog("Open by mark",
                             None,
                             0,
@@ -114,20 +118,20 @@ class gMemobook(Memobook):
                              Gtk.STOCK_APPLY, Gtk.ResponseType.APPLY))
         getter.set_default_size(width/2, height/2)
         getter_list = Gtk.ListStore(str)
-        dprint(3,"adding labels...")
+        dprint(3, "adding labels...")
         for item in toc:
             getter_list.append([item])
         getter_tree = Gtk.TreeView(getter_list)
         getter_tree_select = getter_tree.get_selection()
         getter_tree_select.set_mode(Gtk.SelectionMode.MULTIPLE)
         getter_rend = Gtk.CellRendererText()
-        getter_column = Gtk.TreeViewColumn("Select marks:",getter_rend,text=0)
+        getter_column = Gtk.TreeViewColumn("Select marks:", getter_rend, text=0)
         getter_tree.append_column(getter_column)
         getter_view = Gtk.ScrolledWindow()
         getter_view.add(getter_tree)
         getter_view.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         radio_label = Gtk.Label("Search logic:")
-        radio_or = Gtk.RadioButton.new_with_label(None,"OR")
+        radio_or = Gtk.RadioButton.new_with_label(None, "OR")
         radio_or.connect("toggled",lambda x: toggler(x,logic_var,"or"))
         radio_and = Gtk.RadioButton.new_with_label(None,"AND")
         radio_and.join_group(radio_or)
@@ -158,8 +162,9 @@ class gMemobook(Memobook):
 
             
     def __open_mark_confirm(self, widget, win, ls, logic):
-        dprint(3,"\n__open_mark_confirm")
-        dprint(3,"\n"+str(ls))
+        '''Open files by mark: minor dialogue for choosing among search results'''
+        dprint(3, "\n__open_mark_confirm")
+        dprint(3, "\n"+str(ls))
         if ls:
             if logic == "or":
                 notes = self.data.open_from_toc(ls)
@@ -171,60 +176,65 @@ class gMemobook(Memobook):
                     msg = Gtk.MessageDialog(win,
                                             Gtk.DialogFlags(2),
                                             0,
-                                            (Gtk.STOCK_OK,Gtk.ResponseType.OK),
+                                            (Gtk.STOCK_OK, Gtk.ResponseType.OK),
                                             "Error: " + str(last))
                     
                     msg.run()
                     msg.destroy()
-                    dprint(2,"\nOpen error: " + str(last))
+                    dprint(2, "\nOpen error: " + str(last))
                 else:
                     failure = ", ".join(ls)
                     if logic == "or":
                         msg = Gtk.MessageDialog(win,
                                                 Gtk.DialogFlags(2),
                                                 0,
-                                                (Gtk.STOCK_OK,Gtk.ResponseType.OK),
+                                                (Gtk.STOCK_OK, Gtk.ResponseType.OK),
                                                 "Unable to find files for any of the following marks: " + failure)
 
                         msg.run()
                         msg.destroy()
-                        dprint(2,"\nOpen failure")
+                        dprint(2, "\nOpen failure")
                     else:
                         msg = Gtk.MessageDialog(win,
                                                 Gtk.DialogFlags(2),
                                                 0,
-                                                (Gtk.STOCK_OK,Gtk.ResponseType.OK),
+                                                (Gtk.STOCK_OK, Gtk.ResponseType.OK),
                                                 "Unable to find files containing each of the following marks: " + failure)
                         msg.run()
                         msg.destroy()
-                        dprint(2,"Unable to find files containing each of the following marks: " + failure)
-                    dprint(2,"...returning")
+                        dprint(2, "Unable to find files containing each of the following marks: " + failure)
+                    dprint(2, "...returning")
                     return Gtk.ResponseType.CANCEL
             else:
                 for nt in notes:
-                    dprint(3,nt.ID)
+                    dprint(3, nt.ID)
                 confdialog = Gtk.Dialog("Confirm files to open",
                                         None,
                                         0,
-                                        (Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL,
+                                        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                                          Gtk.STOCK_OPEN, Gtk.ResponseType.APPLY))
-                confdialog.add_button("Open All",Gtk.ResponseType.YES)
+                confdialog.add_button("Open All", Gtk.ResponseType.YES)
                 confdialog.set_default_size(*(win.get_size()))
                 chooser_list = Gtk.ListStore(str)
                 for i,nt in enumerate(notes):
-                    chooser_list.append(["{:>5}{:<32}".format(str(i+1)+". ",str(os.path.basename(nt.ID)) + "  (" + str(os.path.dirname(nt.ID)) + ")")])
+                    chooser_list.append(["{:>5}{:<32}".format(str(i+1)+". ",
+                                                              str(os.path.basename(nt.ID)) + "  (" + str(os.path.dirname(nt.ID)) + ")")])
                 chooser_tree = Gtk.TreeView(chooser_list)
                 chooser_tree_select = chooser_tree.get_selection()
                 chooser_tree_select.set_mode(Gtk.SelectionMode.MULTIPLE)
                 chooser_rend = Gtk.CellRendererText()
-                chooser_column = Gtk.TreeViewColumn("Please select from the following:",chooser_rend,text=0)
+                chooser_column = Gtk.TreeViewColumn("Please select from the following:", chooser_rend,text=0)
                 chooser_tree.append_column(chooser_column)
                 chooser_view = Gtk.ScrolledWindow()
                 chooser_view.add(chooser_tree)
                 chooser_view.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
                 box = confdialog.get_content_area()
                 box.add(chooser_view)
-                box.set_child_packing(chooser_view,expand=True,fill=True,padding=0,pack_type=Gtk.PackType(1))
+                box.set_child_packing(chooser_view,
+                                      expand=True,
+                                      fill=True,
+                                      padding=0,
+                                      pack_type=Gtk.PackType(1))
                 confdialog.show_all()
                 value = confdialog.run()
                 if (value != Gtk.ResponseType.CANCEL) and (value != Gtk.ResponseType.NONE):
@@ -241,14 +251,19 @@ class gMemobook(Memobook):
                             gfilelist.append(Gio.file_new_for_path(tmp_nt.ID))
                     if gfilelist:
                         for gf in gfilelist:
-                            Gedit.commands_load_location(self.__window, gf, None, -1, -1)
+                            Gedit.commands_load_location(self.__window,
+                                                         gf,
+                                                         None,
+                                                         -1,
+                                                         -1)
                 confdialog.destroy()
                 return value
         return Gtk.ResponseType.APPLY
 
 
     def save_note(self):
-        dprint(3,"\ngMemobook::save_note::")
+        '''Save note to disk with GEdit async save, and write marks to memobook'''
+        dprint(3, "\ngMemobook::save_note::")
         doc = self.__window.get_active_document()
         Gedit.commands_save_document_async(doc,
                                            self.__window,
@@ -259,7 +274,8 @@ class gMemobook(Memobook):
 
 
     def save_note_as(self):
-        dprint(3,"\ngMemobook::save_note::")
+        '''Save-as to disk with GEdit async save, and write marks to memobook'''
+        dprint(3, "\ngMemobook::save_note::")
         doc = self.__window.get_active_document()
         f = doc.get_file()
         path = GtkSource.File.get_location(f).get_path()
@@ -274,9 +290,10 @@ class gMemobook(Memobook):
 
 
     def __save_note_hook(self,obj,res,dat):
-        dprint(3,"\nin save_note_hook...")
-        result = Gedit.commands_save_document_finish(obj,res)
-        dprint(3,"got result: " + str(result))
+        '''Callback function for GEdit async save, as used in save_note and save_note_as'''
+        dprint(3, "\nin save_note_hook...")
+        result = Gedit.commands_save_document_finish(obj, res)
+        dprint(3, "got result: " + str(result))
         if result == True:
             path = GtkSource.File.get_location(obj.get_file()).get_path()
             note = None
@@ -287,16 +304,17 @@ class gMemobook(Memobook):
             else:
                 note = Note(dat)
                 note.ID = path
-            dprint(3,"...Note to be saved: " + str(note.ID))
+            dprint(3, "...Note to be saved: " + str(note.ID))
             if self.data.save_note_nowrite(note):
-                dprint(1,"\nbinding save error")
+                dprint(1, "\nbinding save error")
         else:
-            dprint(1,"\nSave did not occur")
+            dprint(1, "\nSave did not occur")
 
 
 
     def open_pop(self, hook_remove, hook_add, hook_apply):
-        dprint(3,"\ngMemobook::open_pop::")
+        '''Manage bookmark sources: Major dialogue'''
+        dprint(3, "\ngMemobook::open_pop::")
         [width, height] = self.__window.get_size()
         if width < 200:
             width = 300
@@ -306,12 +324,12 @@ class gMemobook(Memobook):
         manager.set_title("Manage Sources")
         manager.set_transient_for(self.__window)
         manager.set_focus()
-        manager.set_default_geometry(width/2,height/2)
-        manager.connect("destroy",lambda x: manager.destroy())
+        manager.set_default_geometry(width/2, height/2)
+        manager.connect("destroy", lambda x: manager.destroy())
         source_list = Gtk.ListStore(str)
-        dprint(3,"adding labels...")
+        dprint(3, "adding labels...")
         source_items = self.ctrl["db"]["scan"]
-        if isinstance(source_items,str):
+        if isinstance(source_items, str):
             source_items = [ source_items ]
         else:
             source_items = list(source_items)
@@ -322,38 +340,59 @@ class gMemobook(Memobook):
         source_tree_select = source_tree.get_selection()
         source_tree_select.set_mode(Gtk.SelectionMode.MULTIPLE)
         source_rend = Gtk.CellRendererText()
-        source_column = Gtk.TreeViewColumn("Current silent marks:",source_rend,text=0)
+        source_column = Gtk.TreeViewColumn("Current silent marks:", source_rend, text=0)
         source_tree.append_column(source_column)
         source_view = Gtk.ScrolledWindow()
         source_view.add(source_tree)
         source_view.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         btn_remove = Gtk.Button.new_with_label("Remove")
         btn_remove.connect("clicked",
-                           lambda x: hook_remove(source_tree_select,source_items))
+                           lambda x: hook_remove(source_tree_select, source_items))
         btn_add = Gtk.Button.new_with_label("Add Other")
         btn_add.connect("clicked",
-                        lambda x: hook_add(manager,source_tree,source_items))
+                        lambda x: hook_add(manager, source_tree, source_items))
         btn_apply = Gtk.Button.new_with_label("Apply")
         btn_apply.connect("clicked",
-                          lambda x: hook_apply(manager,source_items))
+                          lambda x: hook_apply(manager, source_items))
         subbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         subbox.add(btn_remove)
         subbox.add(btn_add)
         subbox.add(btn_apply)
         subbox.set_homogeneous(True)
-        subbox.set_child_packing(btn_remove,expand=False,fill=True,padding=5,pack_type=Gtk.PackType(0))
-        subbox.set_child_packing(btn_add,expand=False,fill=True,padding=0,pack_type=Gtk.PackType(0))
-        subbox.set_child_packing(btn_apply,expand=False,fill=True,padding=5,pack_type=Gtk.PackType(0))
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)#manager.get_content_area()
+        subbox.set_child_packing(btn_remove,
+                                 expand=False,
+                                 fill=True,
+                                 padding=5,
+                                 pack_type=Gtk.PackType(0))
+        subbox.set_child_packing(btn_add,
+                                 expand=False,
+                                 fill=True,
+                                 padding=0,
+                                 pack_type=Gtk.PackType(0))
+        subbox.set_child_packing(btn_apply,
+                                 expand=False,
+                                 fill=True,
+                                 padding=5,
+                                 pack_type=Gtk.PackType(0))
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.add(source_view)
         box.add(subbox)
-        box.set_child_packing(source_view,expand=True,fill=True,padding=0,pack_type=Gtk.PackType(0))
-        box.set_child_packing(subbox,expand=False,fill=True,padding=0,pack_type=Gtk.PackType(1))
+        box.set_child_packing(source_view,
+                              expand=True,
+                              fill=True,
+                              padding=0,
+                              pack_type=Gtk.PackType(0))
+        box.set_child_packing(subbox,
+                              expand=False,
+                              fill=True,
+                              padding=0,
+                              pack_type=Gtk.PackType(1))
         manager.add(box)
         manager.show_all()
 
 
     def open_pop_remove(self, slist, sitems):
+        '''Manage sources: remove directory.'''
         model, pathlist = slist.get_selected_rows()
         iterlist = [ model.get_iter(p) for p in pathlist ]
         index_list = list(j.get_indices()[0] for j in slist.get_selected_rows()[1])
@@ -364,8 +403,8 @@ class gMemobook(Memobook):
             model.remove(i)
 
 
-
     def open_pop_add(self, win, slist, sitems):
+        '''Manage bookmark sourse: add directory. Calls GTK file dialogue.'''
         dialog = Gtk.FileChooserNative.new(title="Select Directory to Add",
                                        parent=win,
                                        action=Gtk.FileChooserAction.SELECT_FOLDER,
@@ -380,6 +419,7 @@ class gMemobook(Memobook):
 
 
     def open_pop_apply(self, win, sitems):
+        '''Manage sources: apply changes to memobook and config object'''
         self.data.clear()
         if sitems:
             self.ctrl["db"]["scan"] = list(sitems)
@@ -390,7 +430,9 @@ class gMemobook(Memobook):
 
 
     def mark_dialogue(self):
-        def silent_remove(strees,cmarks):
+        '''Select mark to be added to note from list of current marks'''
+        def silent_remove(strees, cmarks):
+            # subfunction for removing items from the pending list of silent marks
             model, pathlist = strees.get_selected_rows()
             iterlist = [ model.get_iter(p) for p in pathlist ]
             index_list = list(j.get_indices()[0] for j in strees.get_selected_rows()[1])
@@ -399,27 +441,29 @@ class gMemobook(Memobook):
                 cmarks.pop(index)
             for i in iterlist:
                 model.remove(i)
-        def silent_add(stree,sentry,cmarks):
+        def silent_add(stree, sentry, cmarks):
+            # subfunction for adding items to the pending list of silent marks
             model = stree.get_model()
             tmp_marks = parse.split_by_unknown(sentry.get_text())
-            dprint(3,"\nMarks to be added: " + str(tmp_marks))
+            dprint(3, "\nMarks to be added: " + str(tmp_marks))
             for tm in tmp_marks:
                 cmarks.append(tm)
                 model.append([tm])
             sentry.set_text("")
-        def silent_apply(widget,nt,cmarks):
-            dprint(3,"\nMarks to be stored: " + str(cmarks))
-            self.data.update(nt,cmarks)
+        def silent_apply(widget, nt, cmarks):
+            # assert pending list of marks to memobook
+            dprint(3, "\nMarks to be stored: " + str(cmarks))
+            self.data.update(nt, cmarks)
             widget.destroy()
             return
-        dprint(3,"\ngMemobook::mark_dialogue::")
+        dprint(3, "\ngMemobook::mark_dialogue::")
         doc = self.__window.get_active_document()
         path = GtkSource.File.get_location(doc.get_file()).get_path()
-        dprint(3,"Got path: " + str(path))
+        dprint(3, "Got path: " + str(path))
         note = self.__get_note_ref(path)
         if not note:
-            note = self.__make_note_ref(doc,path,True)
-        dprint(3,"...Note is prepared.")
+            note = self.__make_note_ref(doc, path, True)
+        dprint(3, "...Note is prepared.")
         if not note:
             msg = Gtk.MessageDialog(self.__window,
                                     Gtk.DialogFlags(2),
@@ -440,13 +484,13 @@ class gMemobook(Memobook):
             manager.set_title("Manage Silent Marks")
             manager.set_transient_for(self.__window)
             manager.set_focus()
-            manager.set_default_geometry(width/2,height/2)
-            manager.connect("destroy",lambda x: manager.destroy())
+            manager.set_default_geometry(width/2, height/2)
+            manager.connect("destroy", lambda x: manager.destroy())
             silent_list = Gtk.ListStore(str)
             current_marks = []
             if note.tags:
                 if note.tags.silent:
-                    dprint(3,"\nSilent tags: " + str(note.tags.silent))
+                    dprint(3, "\nSilent tags: " + str(note.tags.silent))
                     current_marks = list(note.tags.silent)
                     current_marks.sort()
                     for st in current_marks:
@@ -455,7 +499,7 @@ class gMemobook(Memobook):
             silent_tree_select = silent_tree.get_selection()
             silent_tree_select.set_mode(Gtk.SelectionMode.MULTIPLE)
             silent_rend = Gtk.CellRendererText()
-            silent_column = Gtk.TreeViewColumn("Current directories to be scanned for marks:",silent_rend,text=0)
+            silent_column = Gtk.TreeViewColumn("Current directories to be scanned for marks:", silent_rend,text=0)
             silent_tree.append_column(silent_column)
             silent_view = Gtk.ScrolledWindow()
             silent_view.add(silent_tree)
@@ -484,11 +528,11 @@ class gMemobook(Memobook):
                                                      note,
                                                      current_marks))
             grid_alts = Gtk.Grid.new()
-            grid_alts.attach(label_remove,0,0,1,1)
-            grid_alts.attach(btn_remove,2,0,1,1)
-            grid_alts.attach(label_add,0,1,1,1)
-            grid_alts.attach(entry_add,1,1,1,1)
-            grid_alts.attach(btn_add,2,1,1,1)
+            grid_alts.attach(label_remove, 0, 0, 1, 1)
+            grid_alts.attach(btn_remove, 2, 0, 1, 1)
+            grid_alts.attach(label_add, 0, 1, 1, 1)
+            grid_alts.attach(entry_add, 1, 1, 1, 1)
+            grid_alts.attach(btn_add, 2, 1, 1, 1)
             grid_alts.set_row_spacing(5)
             grid_alts.set_column_spacing(5)
             grid_alts.set_column_homogeneous(True)
@@ -497,26 +541,58 @@ class gMemobook(Memobook):
             box_control.add(btn_cancel)
             box_control.add(btn_apply)
             box_control.set_homogeneous(True)
-            box_control.set_child_packing(btn_cancel,expand=False,fill=True,padding=5,pack_type=Gtk.PackType(0))
-            box_control.set_child_packing(btn_apply,expand=False,fill=True,padding=5,pack_type=Gtk.PackType(0))
+            box_control.set_child_packing(btn_cancel,
+                                          expand=False,
+                                          fill=True,
+                                          padding=5,
+                                          pack_type=Gtk.PackType(0))
+            box_control.set_child_packing(btn_apply,
+                                          expand=False,
+                                          fill=True,
+                                          padding=5,
+                                          pack_type=Gtk.PackType(0))
             padding_box_horiz = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
             padding_box_vert = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             padding_box_vert.add(grid_alts)
             padding_box_vert.add(box_control)
-            padding_box_vert.set_child_packing(grid_alts,expand=True,fill=True,padding=5,pack_type=Gtk.PackType(0))
-            padding_box_vert.set_child_packing(box_control,expand=True,fill=True,padding=0,pack_type=Gtk.PackType(1))
+            padding_box_vert.set_child_packing(grid_alts,
+                                               expand=True,
+                                               fill=True,
+                                               padding=5,
+                                               pack_type=Gtk.PackType(0))
+            padding_box_vert.set_child_packing(box_control,
+                                               expand=True,
+                                               fill=True,
+                                               padding=0,
+                                               pack_type=Gtk.PackType(1))
             padding_box_horiz.add(padding_box_vert)
-            padding_box_horiz.set_child_packing(padding_box_vert,expand=True,fill=True,padding=5,pack_type=Gtk.PackType(0))
+            padding_box_horiz.set_child_packing(padding_box_vert,
+                                                expand=True,
+                                                fill=True,
+                                                padding=5,
+                                                pack_type=Gtk.PackType(0))
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             box.add(silent_view)
             box.add(padding_box_horiz)
-            box.set_child_packing(silent_view,expand=True,fill=True,padding=0,pack_type=Gtk.PackType(0))
-            box.set_child_packing(padding_box_horiz,expand=False,fill=False,padding=0,pack_type=Gtk.PackType(1))
+            box.set_child_packing(silent_view,
+                                  expand=True,
+                                  fill=True,
+                                  padding=0,
+                                  pack_type=Gtk.PackType(0))
+            box.set_child_packing(padding_box_horiz,
+                                  expand=False,
+                                  fill=False,
+                                  padding=0,
+                                  pack_type=Gtk.PackType(1))
             manager.add(box)
             manager.show_all()
             
 
     def __get_note_ref(self, fpath):
+        '''Get note path: returns note ID/path if note was opened via memobook, returns None if not'''
+        # this function is used in save-note methods:
+        #   we must have an associated note if we wish to save marks to memobook.
+        #   This function tests whether we do.
         if not self.__open_notes:
             return None
         for nt in self.__open_notes:
@@ -526,18 +602,26 @@ class gMemobook(Memobook):
 
     
     def __make_note_ref(self, doc, docpath, bodycopy=False):
+        '''Make note path: create and associate a note with current file and return it'''
+        # this function is used in save-note methods:
+        #   we must have an associated note if we wish to save marks to memobook.
+        #   This function sets up the note so that we can perform the save.
         try:
             note = Note()
             note.title = os.path.basename(docpath)
             note.ID = docpath
             note.mime = NoteMime.TEXT
-            docbody = doc.get_text(doc.get_start_iter(),doc.get_end_iter(),True)
+            docbody = doc.get_text(doc.get_start_iter(),
+                                   doc.get_end_iter(),
+                                   True)
             if bodycopy:
                 note.body = docbody
             note.tags = Tag(parse.parse(docbody))
-            note.tags.silent = index_search(self.index,docpath,None)
+            note.tags.silent = index_search(self.index,
+                                            docpath,
+                                            None)
         except Exception as e:
-            dprint(1,"\nError: " + str(e))
+            dprint(1, "\nError: " + str(e))
             return None
         else:
             self.__open_notes.append(note)
