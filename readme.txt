@@ -2,7 +2,6 @@ Memobook Note Suite
 Author: eightbitastronomy
 License: see file, LICENSE, provided with source code.
 
-Personal note: It's been a long semester of teaching hell, but for anyone (yeah, right) who was waiting for the emacs plugin, it has arrived. 12 may 2020.
 
 A notepad/texteditor derivative for people who don't want to remember everything ever.
  -   If you commonly write down things you've learned in plain text files -- because there's just too much to remember --
