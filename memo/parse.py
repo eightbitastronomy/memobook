@@ -25,10 +25,19 @@
 
 
 
+
+# Parsing and splitting utility functions for text-processing
+
+
+
 from memo.config import TAG_MARKER
+from memo.debug import dprint
+
 
 
 def parse(t):
+    '''Parse string for bookmarks. Returns list of results.'''
+    dprint(3, "\nparse.parse")
     if t is None:
         return []
     if t is "":
@@ -47,22 +56,25 @@ def parse(t):
                 break
             line = line[index+len(TAG_MARKER):]
             temp_str = line.split(' ').pop(0)
-            tags.append( temp_str.rstrip("\t") )
+            tags.append(temp_str.rstrip("\t"))
             line = line[len(temp_str):]
     return tags
 
+
 def split_by_unknown(t):
+    '''Split string by several possible separators: space, comma, semi-colon, tag-marker, or vertical bar'''
+    dprint(3, "\nparse.split_by_unknown")
     if t is None:
         return []
     if t is "":
         return []
     tags = []
-    maxpair = ("",0)
+    maxpair = ("", 0)
     results = []
     splitters = (" ", ",", ";", TAG_MARKER, "|", ) # not all non-alphanumeric characters are here b/c tags should be mostly unrestricted in form.
     for s in splitters:
         tmp_list = t.split(s)
-        results.append( (s,len(tmp_list)) )
+        results.append((s, len(tmp_list)))
     for pair in results:
         if pair[1] > maxpair[1]:
             maxpair = pair

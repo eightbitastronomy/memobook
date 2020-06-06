@@ -45,7 +45,7 @@ from memo.book import Book
 import memo.parse as parse
 from memo.hscroll import ListboxHV
 from memo.note import NoteMime, Note, Tag
-from memo.config import dprint
+from memo.debug import dprint
 from memo.binding import index_search
 
 

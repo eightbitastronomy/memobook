@@ -37,7 +37,7 @@ import memo.parse as parse
 import memo.empty as empty
 from memo.binding import FileBinding, DatabaseBinding
 from memo.note import NoteMime
-from memo.config import dprint
+from memo.debug import dprint
 
 
 

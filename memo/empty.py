@@ -28,8 +28,13 @@
 '''Module for printing skeleton conf.xml and index.xml when either is missing'''
 
 
-def write_skeleton_conf(path,filepath):
-    with open(path + filepath,"w") as f:
+from memo.debug import dprint
+
+
+def write_skeleton_conf(path, filepath):
+    '''Return string containing contains of skeleton conf.xml'''
+    dprint(3, "\nempty.write_skeleton_conf")
+    with open(path + filepath, "w") as f:
         f.write('''<?xml version="1.0" ?>
 <configuration>
    <db>
@@ -104,8 +109,10 @@ def write_skeleton_conf(path,filepath):
 
 
 
-def write_skeleton_index(path,filepath):
-    with open(path+filepath,"w") as f:
+def write_skeleton_index(path, filepath):
+    '''Return string containing contains of skeleton index.xml'''
+    dprint(3, "\nempty.write_skeleton_index")
+    with open(path+filepath, "w") as f:
         f.write('''<?xml version="1.0" ?>
   <contents>
   </contents>''')

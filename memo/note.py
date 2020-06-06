@@ -29,28 +29,37 @@
 
 import memo.parse as parse
 import curses.ascii
-import memo.config as config
 import enum
+from memo.config import TAG_MARKER
 
 
 
 class NoteMime(enum.Enum):
+
+    '''Enumeration of mime types for note contents'''
+
+    
     TEXT = 0
     IMAGE = 1
     PDF = 2
     OTHER = 99
 
 
+
 class Tag(list):
 
-    def __init__(self,t=None):
-        self._mrk = config.TAG_MARKER
+    '''List-based class for dynamic storage of bookmarks'''
+
+    
+    def __init__(self, t=None):
+        dprint(3, "\nTag::__init__")
+        self._mrk = TAG_MARKER
         self.silent = []
         if t is None:
             list.__init__(self)
         else:
             if type(t)==Tag:
-                list.__init__(self,t)
+                list.__init__(self, t)
                 self.silent = list(t.silent)
                 return
             if type(t)==list:
@@ -60,18 +69,25 @@ class Tag(list):
                 list.__init__(self)
                 self.append(t)
                 return
+            
 
     def __str__(self):
+        dprint(3, "\nTag::__str__")
         output = ""
         for item in self:
             output += self._mrk + str(item) + " "
         return output
 
 
-    
+
 class Note():
 
-    def __init__(self,n=None):
+    '''Note class: holds file contents, path, tags and silent tags, title, and mime-type'''
+
+    
+    def __init__(self, n=None):
+        dprint(3, "\nNote::__init__")
+        #initialization depends on what, if anything, is passed in as an argument'''
         if n and type(n) == Note:
             self.title = str(n.title)     # file name
             self.body = str(n.body)       # body of the note
@@ -85,14 +101,18 @@ class Note():
             self.ID = ""
             self.mime = NoteMime.OTHER
 
+            
     def __str__(self):
+        dprint(3, "\nNote::__str__")
         output = ""
         if self.body is not None:
             output += str(self.body)
-        #if self.tags is not None:
         output += " " + str(self.tags)
         return output
 
+    
     def parse(self):
+        '''Scan note body for bookmarks via parse function'''
+        dprint(3, "\nNote::parse")
         for t in parse.parse(self.body):
             self.tags.append(t)

@@ -38,7 +38,7 @@ import memo.parse as parse
 import memo.extconf as extconf
 from pdf2image import convert_from_path
 from memo.note import Note, NoteMime, Tag
-from memo.config import dprint
+from memo.debug import dprint
 
 
 

@@ -26,30 +26,23 @@
 
 
 
+# This is not conf.xml nor are its values found in conf.xml. However, configuration
+# scripts need to alter it. It contains a few configuration parameters declared, basically,
+# as global variables instead of being placed as node/value items in conf.xml because...
+#   ...keeping these values in an extconf object means many objects, from the
+#   memobook class down to the note class will have to store references to it. This
+#   means...
+#      1. Messier code from classes to method calls
+#      2. slower runtime execution when dereferencing extconf values
+# Also, some of these values are used in extconf.py, so I think they should be kept
+# here, all in one place. An exception to this is the values found in debug.py.
+
+
+
+
 ######## configuration values ########
 
-TAG_MARKER="@@"
-XML_STACK_DEPTH=4
-XML_MAX_CHAR=512
-TAB_SIZE=8
-
-
-
-######## debugging/tracing ########
-
-DEBUG_PRINT=True     # activate printing of debug information
-VERBOSITY=3          # 0: no printing;
-                     # 1: Exception-error printing
-                     # 2: Additional error and other priority printing
-                     # 3: Flow-tracing printing
-
-if DEBUG_PRINT:
-    import sys
-
-    
-def dprint(level,errorstring):
-    if DEBUG_PRINT:
-        if VERBOSITY >= level:
-            sys.stderr.write(errorstring)
-            sys.stderr.flush()
-    return
+TAG_MARKER = "@@"
+XML_STACK_DEPTH = 4
+XML_MAX_CHAR = 512
+TAB_SIZE = 8

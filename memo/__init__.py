@@ -13,3 +13,4 @@ import memo.hscroll as hscroll
 import memo.imagecanvas as imagecanvas
 import memo.pdfcanvas as pdfcanvas
 import memo.config as config
+import memo.debug as debug

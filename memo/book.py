@@ -39,7 +39,8 @@ from PIL import Image as im
 from PIL import ImageTk
 from memo.note import NoteMime
 from memo.page import TextPage, ImagePage, PDFPage
-from memo.config import TAB_SIZE, dprint
+from memo.config import TAB_SIZE
+from memo.debug import dprint
 
 
 

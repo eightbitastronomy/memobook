@@ -32,7 +32,7 @@
 import xml.dom.minidom
 import sys
 import memo.scrubber as scrubber
-import memo.config as config
+import memo.config as conf
 
 
 
@@ -354,7 +354,7 @@ def _traverse_conf(doc,nd,parent):
     
 def _load_doc(name):
     f = open(name,"r")
-    scrubbed = scrubber.ScrubberXML(length=config.XML_MAX_CHAR,depth=config.XML_STACK_DEPTH,text=f.read())
+    scrubbed = scrubber.ScrubberXML(length=conf.XML_MAX_CHAR,depth=conf.XML_STACK_DEPTH,text=f.read())
     doc =  xml.dom.minidom.parseString(scrubbed.get_parsed())
     f.close()
     return doc

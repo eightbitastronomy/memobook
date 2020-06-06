@@ -34,7 +34,7 @@ import memo.hscroll as hscroll
 import memo.note as note
 from memo.imagecanvas import ImageCanvas
 from memo.pdfcanvas import PDFCanvas
-from memo.config import dprint
+from memo.debug import dprint
 
 
 
