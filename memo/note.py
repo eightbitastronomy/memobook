@@ -31,6 +31,7 @@ import memo.parse as parse
 import curses.ascii
 import enum
 from memo.config import TAG_MARKER
+from memo.debug import dprint
 
 
 

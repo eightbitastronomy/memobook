@@ -29,103 +29,151 @@
 
 
 
-from tkinter import *
-from tkinter import scrolledtext as st
+import tkinter
+from tkinter import scrolledtext
+from memo.debug import dprint
 
 
 
 
-class ListboxH(Listbox):
+class ListboxH(tkinter.Listbox):
+    
     '''A ListBox with a horizontal scrollbar'''
-    def __init__(self,master=None,**kwargs):
-        self.__frame = Frame(master)
-        self.__scroll = Scrollbar(self.__frame,orient="horizontal")
-        self.__scroll.pack(side=BOTTOM,fill="x")
-        Listbox.__init__(self, self.__frame, **kwargs)
-        self.config(self,xscrollcommand=self.__scroll.set)
+
+    
+    def __init__(self, master=None, **kwargs):
+        dprint(3, "\nListboxH::__init__")
+        self.__frame = tkinter.Frame(master)
+        self.__scroll = tkinter.Scrollbar(self.__frame, orient="horizontal")
+        self.__scroll.pack(side=tkinter.BOTTOM, fill="x")
+        tkinter.Listbox.__init__(self, self.__frame, **kwargs)
+        self.config(self, xscrollcommand=self.__scroll.set)
         self.__scroll.config(command=self.xview)
-        self.pack(side=TOP,fill=BOTH,expand="true")
-        list_meths = vars(Listbox).keys()
-        methods = vars(Pack).keys() | vars(Grid).keys() | vars(Place).keys()
+        self.pack(side=tkinter.TOP, fill=tkinter.BOTH, expand="true")
+        list_meths = vars(tkinter.Listbox).keys()
+        methods = vars(tkinter.Pack).keys() | vars(tkinter.Grid).keys() | vars(tkinter.Place).keys()
         methods = methods.difference(list_meths)
         for m in methods:
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self.__frame, m))
+
+                
     def __str__(self):
+        dprint(3, "\nListboxH::__str__")
         return str(self.__frame)
 
 
 
-class ListboxHV(Listbox):
+class ListboxHV(tkinter.Listbox):
+    
     '''A ListBox with horizontal and vertical scrollbars'''
-    def __init__(self,master=None,**kwargs):
-        self.__frame = Frame(master)
-        self.__subframe = Frame(self.__frame)
-        Listbox.__init__(self, self.__subframe, **kwargs)
-        self.__scroll_h = Scrollbar(self.__frame,orient="horizontal")
-        self.__scroll_v = Scrollbar(self.__subframe,orient="vertical")
-        self.config(self,xscrollcommand=self.__scroll_h.set,yscrollcommand=self.__scroll_v.set)
+
+    
+    def __init__(self, master=None, **kwargs):
+        dprint(3, "\nListboxHV::__init__")
+        self.__frame = tkinter.Frame(master)
+        self.__subframe = tkinter.Frame(self.__frame)
+        tkinter.Listbox.__init__(self, self.__subframe, **kwargs)
+        self.__scroll_h = tkinter.Scrollbar(self.__frame, orient="horizontal")
+        self.__scroll_v = tkinter.Scrollbar(self.__subframe, orient="vertical")
+        self.config(self,
+                    xscrollcommand=self.__scroll_h.set,
+                    yscrollcommand=self.__scroll_v.set)
         self.__scroll_h.config(command=self.xview)
         self.__scroll_v.config(command=self.yview)
-        self.__scroll_v.pack(side="right",fill="y")
-        self.__scroll_h.pack(side="bottom",fill="x")
-        self.pack(side="left",fill="both",expand="true")
-        self.__subframe.pack(side="top",fill="both",expand="true")
-        list_meths = vars(Listbox).keys()
-        methods = vars(Pack).keys() | vars(Grid).keys() | vars(Place).keys()
+        self.__scroll_v.pack(side="right", fill="y")
+        self.__scroll_h.pack(side="bottom", fill="x")
+        self.pack(side="left", fill="both", expand="true")
+        self.__subframe.pack(side="top", fill="both", expand="true")
+        list_meths = vars(tkinter.Listbox).keys()
+        methods = vars(tkinter.Pack).keys() | vars(tkinter.Grid).keys() | vars(tkinter.Place).keys()
         methods = methods.difference(list_meths)
         for m in methods:
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self.__frame, m))
+
+                
     def __str__(self):
+        dprint(3, "\nListboxHV::__str__")
         return str(self.__frame)
 
 
     
-class ScrolledTextH(st.ScrolledText):
+class ScrolledTextH(scrolledtext.ScrolledText):
+    
     '''A ScrolledText with a horizontal scrollbar'''
-    def __init__(self,master,**kwargs):
-        self.__frame = Frame(master)
-        self.__scroll = Scrollbar(self.__frame,orient="horizontal")
+
+    
+    def __init__(self, master, **kwargs):
+        dprint(3, "\nScrolledTextH::__init__")
+        self.__frame = tkinter.Frame(master)
+        self.__scroll = tkinter.Scrollbar(self.__frame, orient="horizontal")
         kwargs.update({"master":self.__frame})
-        st.ScrolledText.__init__(self,**kwargs)
-        st.ScrolledText.config(self,xscrollcommand=self.__scroll.set)
+        scrolledtext.ScrolledText.__init__(self, **kwargs)
+        scrolledtext.ScrolledText.config(self, xscrollcommand=self.__scroll.set)
         self.__scroll.config(command=self.xview)
-        self.pack(side=TOP,fill="both",expand="true")
-        st_meths = vars(Listbox).keys()
-        methods = vars(Pack).keys() | vars(Grid).keys() | vars(Place).keys()
+        self.pack(side=tkinter.TOP,
+                  fill="both",
+                  expand="true")
+        st_meths = vars(tkinter.Listbox).keys()
+        methods = vars(tkinter.Pack).keys() | vars(tkinter.Grid).keys() | vars(tkinter.Place).keys()
         methods = methods.difference(st_meths)
         for m in methods:
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self.__frame, m))
+
+                
     def hide_h(self):
+        '''Hide the scroll bar'''
+        dprint(3, "\nScrolledTextH::hide_h")
         self.__scroll.pack_forget()
+
+        
     def show_h(self):
-        self.__scroll.pack(side=BOTTOM,fill="x")
+        '''Show the scroll bar'''
+        dprint(3, "\nScrolledTextH::show_h")
+        self.__scroll.pack(side=tkinter.BOTTOM, fill="x")
+
+        
     def __str__(self):
+        dprint(3, "\nScrolledTextH::__str__")
         return str(self.__frame)
 
+    
 
 class TextCompound(ScrolledTextH):
+    
     '''A ScrolledTextH that filters for text edits'''
+    
     __hook = None
-    def __init__(self,master,**kwargs):
+
+    
+    def __init__(self, master, **kwargs):
+        dprint(3, "\nTextCompound::__init__")
         if "hook" in kwargs.keys():
             self.__hook = kwargs["hook"]
             del kwargs["hook"]
-        ScrolledTextH.__init__(self,master,**kwargs)
+        ScrolledTextH.__init__(self, master, **kwargs)
         self._original = self._w + "_original"
         self.tk.call("rename", self._w, self._original)
         self.tk.createcommand(self._w, self._compound)
+        
 
     def set_hook(self,hook):
+        '''Set callback function for insertion, deletion, replacement'''
+        dprint(3, "\nTextCompound::set_hook")
         self.__hook = hook
+
         
     def _compound(self, cmd, *args):
+        '''Middleman function: intercept method calls and filter for edits'''
+        # suppresses errors due to too many undo's
+        # dispatches __hook function for insert, delete, replace
+        dprint(3, "\nTextCompound::_compound")
         compound_cmd = (self._original, cmd) + args
         try:
             cmd_result = self.tk.call(compound_cmd)
-        except TclError as tcle:
+        except tkinter.TclError as tcle:
             tcle_descr = str(tcle)
             if tcle_descr == "nothing to undo":
                 pass
@@ -134,7 +182,7 @@ class TextCompound(ScrolledTextH):
             else:
                 raise tcle
         else:
-            if (cmd=="edit") and ("modified" in args):
+            if (cmd == "edit") and ("modified" in args):
                 return cmd_result
             elif cmd in ("insert", "delete", "replace"):
                 if self.__hook is not None:
