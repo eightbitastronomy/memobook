@@ -29,30 +29,48 @@
 
 
 import enum
+from memo.debug import dprint
+
 
 
 
 class Stack:
+
     '''A bare-bones stack implementation'''
+
     ### This stack is, at the moment, over-kill. ScrubberXML really only needs a counter.
     ### However, in the future I may expand ScrubberXML into something that really does need a stack.
-    def __init__(self,depth):
+
+    
+    def __init__(self, depth):
+        dprint(3, "\nStack::__init__")
         self.__depth = depth
         self.__list = []
         self.__top = 0
-    def push(self,item):
+
+        
+    def push(self, item):
+        '''Push item onto stack'''
+        dprint(3, "\nStack::push")
         if self.__top == self.__depth:
             raise Exception("Stack depth (" + str(self.__depth) + ") exceeded")
         self.__top += 1
         self.__list.append(item)
+
+        
     def pop(self):
+        '''Pop item from stack'''
+        dprint(3, "\nStack::pop")
         if self.__top == 0:
             return None
         self.__top -= 1
         return self.__list.pop(self.__top)
+
+    
     def __str__(self):
+        dprint(3, "\nStack::__str__")
         build_str = ""
-        for i in range(0,self.__top):
+        for i in range(0, self.__top):
             k = i
             while k>0:
                 build_str += ">"
@@ -64,6 +82,9 @@ class Stack:
 
     
 class xml(enum.Enum):
+    
+    '''Enumeration class for states during an XML parse operation'''
+    
     START = 0
     STARTOPEN = 1
     FREEOPEN = 2
@@ -76,11 +97,17 @@ class xml(enum.Enum):
 
     
 class ScrubberXML:
+
+    '''Scrubber class for XML: removes whitespace and rejects objects of exceeding depth'''
+    
     __max_char = 256
     __depth = 16
     __stack = None
     __text = None
-    def __init__(self,**kwargs):
+
+    
+    def __init__(self, **kwargs):
+        dprint(3, "\nScrubberXML::__init__")
         self.__stacks = []
         if "length" in kwargs.keys():
             self.__max_char = kwargs["length"]
@@ -89,9 +116,13 @@ class ScrubberXML:
         self.__stack = Stack(self.__depth)
         if "text" in kwargs.keys():
             self.parse(kwargs["text"])
-    def parse(self,text):
-        i=-1
-        l = len(text)-1
+
+            
+    def parse(self, text):
+        '''Parse XML for whitespace, depth'''
+        dprint(3, "\nScrubberXML::parse")
+        i = -1
+        l = len(text) - 1
         build_str = ""
         free_str = ""
         tag_state = xml.START
@@ -115,7 +146,7 @@ class ScrubberXML:
                         build_str += next_char
                     continue
                 if tag_state == xml.BRKT:
-                    if free_str is not "":
+                    if free_str != "":
                         if str.isalnum(next_char) :
                             tag_state = xml.BRKTOPEN
                             self.__stack.push(i)
@@ -158,6 +189,9 @@ class ScrubberXML:
             raise Exception("Scrub failed: " + str(e))
         else:
             self.__text = build_str
+            
 
     def get_parsed(self):
+        '''Get parsed text'''
+        dprint(3, "\nScrubberXML::get_parsed")
         return self.__text

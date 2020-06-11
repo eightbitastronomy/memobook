@@ -24,17 +24,20 @@
 ###############################################################################################
 
 
+
 '''Canvas class with scrollbars'''
 
 
-import PIL
-import math
+
+#import PIL
+#import math
 import tkinter
-import base64
-import io
+from base64 import b64decode
+from io import BytesIO
 from PIL import Image
 from PIL import ImageTk
 from tkinter import font
+from memo.debug import dprint
 
 
 
@@ -55,6 +58,8 @@ cw_str = '''R0lGODlhagByAKECAAAAAA0NDf///////yH5BAEKAAIALAAAAABqAHIAAAL+lI+py+0P
 
 class ScrolledCanvas(tkinter.Canvas):
 
+    '''Canvas class with scrollbars and mouse-dragging capabilities'''
+
     _src = None
     _canvas_ref = None
     _scale = 1.0
@@ -67,7 +72,9 @@ class ScrolledCanvas(tkinter.Canvas):
     __cw_tk = None
     _font_adjust = 0
     
-    def __init__(self,master,**kwargs):
+    
+    def __init__(self, master, **kwargs):
+        dprint(3, "\nScrolledCanvas::__init__")
         if "source" in kwargs.keys():
             self._src = kwargs["source"]
             del kwargs["source"]
@@ -81,17 +88,19 @@ class ScrolledCanvas(tkinter.Canvas):
                                           width=1)
         self._disp_frame = tkinter.Frame(self._frame)
         kwargs.update({"master":self._disp_frame})
-        tkinter.Canvas.__init__(self,**kwargs)
-        __ccw = Image.open(io.BytesIO(base64.b64decode(ccw_str)))
-        self.__ccw_tk = ImageTk.PhotoImage(__ccw.resize((14+self._font_adjust,14+self._font_adjust,)))
+        tkinter.Canvas.__init__(self, **kwargs)
+        __ccw = Image.open(BytesIO(b64decode(ccw_str)))
+        self.__ccw_tk = ImageTk.PhotoImage(__ccw.resize((14+self._font_adjust,
+                                                         14+self._font_adjust,)))
         self._rotate_CCW_bt = tkinter.Button(self._ctrl_frame,
                                              text="L",
                                              image=self.__ccw_tk,
                                              padx=0,
                                              pady=0,
                                              command=lambda: self._rotate_CCW())
-        __cw = Image.open(io.BytesIO(base64.b64decode(cw_str)))
-        self.__cw_tk = ImageTk.PhotoImage(__cw.resize((14+self._font_adjust,14+self._font_adjust,)))
+        __cw = Image.open(BytesIO(b64decode(cw_str)))
+        self.__cw_tk = ImageTk.PhotoImage(__cw.resize((14+self._font_adjust,
+                                                       14+self._font_adjust,)))
         self._rotate_CW_bt = tkinter.Button(self._ctrl_frame,
                                             text="R",
                                             image=self.__cw_tk,
@@ -110,7 +119,6 @@ class ScrolledCanvas(tkinter.Canvas):
                                                    offvalue=0,
                                                    padx=0,
                                                    pady=0)
-
         self._scroll_v = tkinter.Scrollbar(self._disp_frame,
                                            orient="vertical")
         self._scroll_h = tkinter.Scrollbar(self._disp_frame,
@@ -181,13 +189,13 @@ class ScrolledCanvas(tkinter.Canvas):
         self._frame.grid_columnconfigure(0,
                                          weight=1)
         self._frame.grid(sticky="nswe")
-        self._zoom.bind("<Button-1>",lambda e:self._set_zoom())
+        self._zoom.bind("<Button-1>", lambda e:self._set_zoom())
         self._frame.bind("<Configure>", lambda e: self._on_frame_configure(True))
-        self.bind("<Button-1>",lambda e: self._drag_start(e.x,e.y))
-        self.bind("<B1-Motion>",lambda e: self._drag(e.x,e.y))
-        self.bind("<Button-4>",lambda e: self._wheel(e,-1))
-        self.bind("<Button-5>",lambda e: self._wheel(e,1))
-        self.bind("<MouseWheel>",lambda e: self._wheel(e))
+        self.bind("<Button-1>", lambda e: self._drag_start(e.x,e.y))
+        self.bind("<B1-Motion>", lambda e: self._drag(e.x,e.y))
+        self.bind("<Button-4>", lambda e: self._wheel(e,-1))
+        self.bind("<Button-5>", lambda e: self._wheel(e,1))
+        self.bind("<MouseWheel>", lambda e: self._wheel(e))
         canv_meths = vars(tkinter.Canvas).keys()
         methods = vars(tkinter.Pack).keys() | vars(tkinter.Grid).keys() | vars(tkinter.Place).keys()
         methods = methods.difference(canv_meths)
@@ -195,17 +203,28 @@ class ScrolledCanvas(tkinter.Canvas):
             if m[0] != '_' and m != 'config' and m != 'configure':
                 setattr(self, m, getattr(self._frame, m))
 
+                
     def get_frame(self):
+        '''Get frame which contains ScrolledCanvas subframes'''
+        dprint(3, "\nScrolledCanvas::get_frame")
         return self._frame
 
+
     def set_hook(self,func):
+        '''Set callback function: virtual method'''
+        dprint(3, "\nScrolledCanvas::set_hook")
         pass
-                
+
+    
     def __str__(self):
+        dprint(3, "\nScrolledCanvas::__str__")
         return str(self._frame)
+
     
     def _set_zoom(self):
-        def __apply_zoom(canv,widge,dia):
+        '''Set zoom level for image in canvas'''
+        dprint(3, "\nScrolledCanvas::_set_zoom")
+        def __apply_zoom(canv, widge, dia):
             try:
                 zoom = float(dia.get())
                 if (zoom > 0.) and (zoom <= 500.0):
@@ -216,39 +235,58 @@ class ScrolledCanvas(tkinter.Canvas):
                 print(e)
         dialog_win = tkinter.Toplevel(self._frame)
         dialog_frame = tkinter.Frame(dialog_win)
-        instructions = tkinter.Label(dialog_frame,text="Zoom (%):")
-        dialog = tkinter.Entry(dialog_frame,width=8)
-        dialog.insert(0,str(self._scale*100.0))
-        dialog_apply = tkinter.Button(dialog_frame,text="Apply",command=lambda:__apply_zoom(self,dialog_win,dialog))
-        dialog_win.bind("<Return>",lambda e:dialog_apply.invoke())
+        instructions = tkinter.Label(dialog_frame, text="Zoom (%):")
+        dialog = tkinter.Entry(dialog_frame, width=8)
+        dialog.insert(0, str(self._scale*100.0))
+        dialog_apply = tkinter.Button(dialog_frame,
+                                      text="Apply",
+                                      command=lambda:__apply_zoom(self,
+                                                                  dialog_win,
+                                                                  dialog))
+        dialog_win.bind("<Return>", lambda e:dialog_apply.invoke())
         instructions.pack(side="left")
         dialog.pack(side="left")
         dialog_apply.pack(side="left")
         dialog_frame.pack()
         
+        
     def _resize(self):
+        '''Resize stub: virtual method'''
+        dprint(3, "\nScrolledCanvas::_resize")
         pass
 
+    
     def _rotate_CCW(self):
+        '''Rotate 90 degrees stub: virtual method'''
+        dprint(3, "\nScrolledCanvas::_rotate_CCW")
         pass
 
+    
     def _rotate_CW(self):
+        '''Rotate -90 degrees stub: virtual method'''
+        dprint(3, "\nScrolledCanvas::_rotate_CW")
         pass
+
     
     def _on_frame_configure(self,eventflag):
         '''Reset the scroll region to encompass the inner frame'''
-        tkinter.Canvas.configure(self,scrollregion=self.bbox("all"))
+        dprint(3, "\nScrolledCanvas::_on_frame_configure")
+        tkinter.Canvas.configure(self, scrollregion=self.bbox("all"))
 
+        
     def _drag_start(self,x,y):
         '''Mouse button down; begin drag operation; collect position information'''
+        dprint(3, "\nScrolledCanvas::_drag_start")
         self._x = x
         self._y = y
         bounding = self.bbox(self._canvas_ref)
         self._inc_x = 1./float(bounding[2]-bounding[0])
         self._inc_y = 1./float(bounding[3]-bounding[1])
 
+        
     def _drag(self,x,y):
         '''Mouse button down while motion detected; drag operation; scroll canvas image'''
+        dprint(3, "\nScrolledCanvas::drag")
         deltax = float(self._x - x)
         deltay = float(self._y - y)
         movex = deltax*self._inc_x + self.xview()[0]
@@ -257,8 +295,11 @@ class ScrolledCanvas(tkinter.Canvas):
         self.yview_moveto(movey)
         self._x = x
         self._y = y
+        
 
     def _wheel(self,e,direction=0):
+        '''Mouse wheel: scroll canvas'''
+        dprint(3, "\nScrolledCanvas::_wheel")
         bounding = self.bbox(self._canvas_ref)
         inc = 1./50.
         if direction == 0:
