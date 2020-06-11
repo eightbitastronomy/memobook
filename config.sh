@@ -15,7 +15,7 @@
 #   would break the least of the mechanics of the script if done poorly.
 #
 #  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2019.
+#  Copyrighted by eightbitastronomy, 2020.
 #
 #  License information:
 #

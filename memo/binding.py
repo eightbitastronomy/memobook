@@ -2,7 +2,7 @@
 #  binding.py: file & database backend
 #
 #  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2019.
+#  Copyrighted by eightbitastronomy, 2020.
 #
 #  License information:
 #

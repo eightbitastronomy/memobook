@@ -2,7 +2,7 @@
 #  scrubber.py: XML utilities for whitespace removal and tree parsing
 #
 #  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2019.
+#  Copyrighted by eightbitastronomy, 2020.
 #
 #  License information:
 #

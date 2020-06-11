@@ -2,11 +2,11 @@
 #  memobookns.py: the GEdit plugin interface
 #
 #  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2019.
+#  Copyrighted by eightbitastronomy, 2020.
 #
 #  License information:
 #
-#  This file is a part of Memobook Note Suite.
+#  This file is a part of Memobook Note Suite. This file is not part of GEdit.
 #
 #  Memobook Note Suite is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License

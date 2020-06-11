@@ -2,7 +2,7 @@
 #  extconf.py: External Configuration loading and saving class
 #
 #  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2019.
+#  Copyrighted by eightbitastronomy, 2020.
 #
 #  License information:
 #

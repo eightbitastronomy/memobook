@@ -2,7 +2,7 @@
 #  hscroll.py: Tk widgets with scrollbars and additional functionality
 #
 #  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2019.
+#  Copyrighted by eightbitastronomy, 2020.
 #
 #  License information:
 #
