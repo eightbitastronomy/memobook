@@ -116,6 +116,7 @@
 	  (setq memobook-mode 1)
 	  (make-save-hook)
 	  ;(princ (key-binding "M-m C-b")) ;;M-m appears to be unbound, but C-m like Vim is tied to Return key
+	  (local-set-key (kbd "M-m r") 'read-silent-index)           ; test
 	  (local-set-key (kbd "M-m w") 'mb-write-marks)            ; WRITE MARKS WITHOUT SAVE
 	  (local-set-key (kbd "M-m s") 'mb-source-scan)            ; SCAN SOURCE DIRECTORIES
 	  (local-set-key (kbd "M-m C-s") 'mb-source-manage)        ; MANAGE SOURCE DIRECTORIES
@@ -176,50 +177,6 @@
 
 
 
-(defun arch-sqlite3-clear ()
-  "Clear the database of bookmarks (i.e., delete the bookmarks table and recreate it)"
-  
-  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'drop table bookmarks;'"))
-  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);'"))
-  
-   )
-
-
-
-
-
-
-
-
-
-(defun arch-sqlite3-read-by-mark (fields params)
-  "Fetch records from database based on mark"
-  
-  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'select " (join-fields fields ",") " from bookmarks where mark=\"" params "\";'"))
-
-  )
-
-
-
-
-
-
-
-
-(defun arch-sqlite3-read-by-file (fields params)
-  "Fetch records from database based on file name"
-
-  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'select " (join-fields fields ",") " from bookmarks where file=\"" params "\";'"))
-
-  )
-
-
-
-
-
-
-
-
 (defun arch-sqlite3-add-mark (title type mark-list)
   "Save marks to database"
 
@@ -252,6 +209,23 @@
 
 
 
+
+
+(defun arch-sqlite3-clear ()
+  "Clear the database of bookmarks (i.e., delete the bookmarks table and recreate it)"
+  
+  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'drop table bookmarks;'"))
+  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);'"))
+  
+  )
+
+
+
+
+
+
+
+
 (defun arch-sqlite3-delete-mark (title mark-list)
   "Remove marks from database"
 
@@ -267,6 +241,94 @@
     (setq mark-list (cdr mark-list))
 
     ) ; while mark-list
+  
+  )
+
+
+
+
+
+
+
+
+(defun arch-sqlite3-read-by-file (fields params)
+  "Fetch records from database based on file name"
+
+  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'select " (join-fields fields ",") " from bookmarks where file=\"" params "\";'"))
+
+  )
+
+
+
+
+
+
+
+
+
+(defun arch-sqlite3-read-by-mark (fields params)
+  "Fetch records from database based on mark"
+  
+  (shell-command-to-string (concat "sqlite3 -line " MB-db " 'select " (join-fields fields ",") " from bookmarks where mark=\"" params "\";'"))
+
+  )
+
+
+
+
+
+
+
+
+
+(defun delve-dir (path)
+  "Recursive directory search for source-scanning"
+
+  (if (not path)
+      nil)
+
+  (let ((adjusted-path (if (eq (substring path (- (length path) 1)) "/")
+			   (substring path 0 (- (length path) 1))
+			 path))
+	(files-list (directory-files path t nil t))
+	(current-file nil)
+	(current-attr nil)
+	(link-name nil))
+
+    (setq files-list (remove (concat path "/.") files-list))
+    (setq files-list (remove (concat path "/..") files-list))
+
+    (while files-list
+      
+      (setq current-file (car files-list))
+      (setq current-attr (file-attributes current-file 'string))
+      
+      (if (stringp (car current-attr))   ; if string, we have a link object
+
+	  (let ((link-name (car current-attr))
+		(link-attr (file-attributes link-name 'string)))
+
+	    (if (file-readable-p (car current-attr))   ; if the link target is not readable, do nothing. Otherwise, continue with link attributes:
+		(if (not (stringp (car link-attr)))    ; if not string, a true value --> directory
+		    (if (car link-attr)
+			(if (not (string-match (concat "^" link-name) path))   ; if the link path is not contained in "path", delve
+			    (delve-dir link-name))
+		      (process-file-for-marks link-name)))       ; was not a string, was a nil value --> file, so process it
+	      ) ; if file-readable-p
+	    
+	    ) ; let link-name
+	
+	(if (car current-attr)           ; we don't have a link object
+	    (delve-dir current-file)         ; true? --> directory, so delve
+	  (process-file-for-marks current-file))   ; false? --> file, so process
+
+	) ; if stringp
+
+      (setq files-list (cdr files-list))
+      
+      ) ; while files-list
+  
+    ) ; let adjusted-path
   
   )
 
@@ -661,7 +723,7 @@
 
 
 (defun mb-source-scan ()
-  "Scan source directories for marks"
+  "Scan source directories and silent index for marks"
   (interactive)
   
   ;scan directories recursively
@@ -669,8 +731,33 @@
 
   ; Python3 version:
 
-  (shell-command-to-string (concat "python3 " MB-loc "/memod.py --ctrl=" MB-conf " --populate"))
-  (princ "Memobook database populated.")
+  ;(shell-command-to-string (concat "python3 " MB-loc "/memod.py --ctrl=" MB-conf " --populate"))
+  ;(princ "Memobook database populated.")
+
+  (let ((stored-sources (xml-get-child-value (xml-get-node-by-match (xml-process-tree (xml-read-conf-tree)) "table" "bookmarks") "scan"))
+	(pending-sources nil)
+	(record-pair nil))
+
+    (if (not stored-sources)
+	nil)
+
+    (funcall MB-clear)
+
+    (princ "Reading source directories...")
+
+    (while stored-sources
+      (delve-dir (car stored-sources))
+      (setq stored-sources (cdr stored-sources))
+      
+      ) ; while stored-sources
+
+    (princ "Reading silent index...")
+
+    (read-silent-index)
+
+    (princ "Memobook database populated.")
+    
+    ) ; let stored-sources
   
   )
 
@@ -815,6 +902,105 @@
 
 
 
+(defun process-file-for-marks (path)
+  "Helper function for scanning sources: Scan file for marks and enter into db"
+
+  (if (not (string-match "\.txt$" path))
+      nil
+
+    (with-temp-buffer
+      
+      (insert-file-contents path nil nil nil)
+      
+      (let ((marklist (scan-for-marks)))
+	
+	(if marklist
+	      (funcall MB-add-mark path 0 marklist))
+	
+	) ; let marklist
+      
+      ) ; with-temp-buffer
+    
+    ) ; if not string-match
+  
+  )
+
+
+
+
+
+
+
+(defun read-silent-index ()
+  "Helper function for scanning sources: Scan the dex for text files"
+  (interactive)
+
+  ;Read in the silent index if it hasn't been done so
+  (if (not *MB-dex-tree*)
+      (xml-read-dex-tree))
+
+  ;(princ (format "%s" (xml-process-tree *MB-dex-tree*)))
+
+  (let ((nodes (xml-process-tree *MB-dex-tree*)))
+    
+    (while nodes
+
+      (let ((node nil)
+	    (type nil)
+	    (taglist nil)
+	    (tag nil)
+	    (path nil)
+	    (marklist nil))
+
+	(setq node (car nodes))
+	(setq type (cdar (cadr node)))
+	(setq taglist (cddr node))
+      
+	(if (string= type "0")
+	    
+	    (while taglist
+
+	      (setq tag (car taglist))
+
+	      ;(princ (format "%s" tag))
+	      ;(terpri)
+
+	      (if (listp tag)
+		  
+		  (progn
+		    
+		    (if (string= (car tag) "loc")
+			(setq path (car (cddr tag)))
+		      (if (string= (car tag) "mark")
+			  (setq marklist (append marklist (list (car (cddr tag)))))))
+		    
+		    ) ; progn
+		
+		) ; if listp
+	      
+	      (setq taglist (cdr taglist))
+
+	      ) ; while taglist
+
+	  ) ; if string= type
+
+	(if path
+	    (funcall MB-add-mark path "0" marklist))
+	
+	) ; let node
+
+      (setq nodes (cdr nodes))
+
+      ) ; while nodes
+	
+    ) ; let nodes
+  
+  )
+
+
+
+
+
 
 (defun remove-last-slash (str)
   "File path processing"
@@ -861,7 +1047,7 @@
 
     wordlist
     
-    ) ; let placeholder
+    ) ; let wordlist
   
   )
 
@@ -1313,23 +1499,25 @@
 
 
 (defun xml-get-file-type ()
-  "Returns mime type-number from silent-dex-tree. Will not load silent-dex-tree, returns nil instead."
+  "Returns mime type-number from silent-dex-tree."
 
   (if (not *MB-dex-tree*)
       (xml-read-dex-tree))
 
   ;If the read was unsuccessful, return nothing
   (if (not *MB-dex-tree*)
-      nil)
+      nil
 
-  (let ((node (xml-get-node-by-match (xml-process-tree *MB-dex-tree*) "loc" (buffer-file-name)))
-	(retval nil))
+    (let ((node (xml-get-node-by-match (xml-process-tree *MB-dex-tree*) "loc" (buffer-file-name)))
+	  (retval nil))
 
-    (setq retval (cdar (cadr node)))
-
-    retval
+      (setq retval (cdar (cadr node)))
+      
+      retval
+      
+      ) ; let node
     
-    ) ; let node
+    ) ; if not MB-dex-tree
   
   )
 
@@ -1423,7 +1611,7 @@
 
 
 (defun xml-read-conf-tree ()
-  "function to read silent index XML into a DOM"
+  "function to read conf XML into a DOM"
   (interactive)
 
   (with-temp-buffer
