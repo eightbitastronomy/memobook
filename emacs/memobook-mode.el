@@ -35,9 +35,7 @@
 ;;        reading from db brings up non-text files...anything that matches query. 
 ;;           Can either filter at db or filter here or allow non-texts to be selected but not loaded
 ;;
-;;        implement scan directories without python =(
-;;
-;;        12 may 2020
+;;        17 june 2020
 
 
 
