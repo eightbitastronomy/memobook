@@ -27,7 +27,7 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Configuration script for Vim currently supports vim-plug and pathogen utilities, as well as Vim 8+ plugin functionality. For other plugin methods, it's currently DIY.
 
 ### The GNU Emacs extension:
- -  No longer requires Python 3, but has a few backend / default-case functions that need to be implemented.
+ -  No longer requires Python 3. Doesn't have any depends except upon version (???) of Emacs.
 
 ### The Gedit plugin:
  -  Requires Python 3 and PyGObject. PyGObject must be new enough to have Gtk 3+ and Gedit 3+ submodules.
