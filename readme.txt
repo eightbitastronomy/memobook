@@ -70,7 +70,8 @@ The Vim extension:
 it's currently DIY.
 
 The GNU Emacs extension:
- -  Currently requires Python 3 for its source scan functionality.
+ -  No longer requires Python 3, but has a few backend / default-case functions 
+    that need to be implemented.
 
 The Gedit plugin:
  -  Requires Python 3 and PyGObject. PyGObject must be new enough to have Gtk 3+

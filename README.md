@@ -6,7 +6,7 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Then sure, you could grep your home directory to death. Or, this is the application for you.
 
 ## The Memobook Note Suite:
- -  Includes a Vim plugin, a windowed GUI, a Gedit plugin, a GNU Emacs plugin, and possibly a future KWrite extension
+ -  Includes a Vim plugin, a windowed GUI, a Gedit plugin, and a GNU Emacs plugin.
  -  Can display image and pdf files too (read-only) with basic functionality (zooming, rotating, etc.) -- windowed GUI only.
  -  Stores information (your bookmarks) about the image & pdf files without altering them.
  -  Bookmarks in plaintext files can be tagged in the text itself, or can be "silently" added, i.e., recorded outside of the file
@@ -18,16 +18,16 @@ A notepad/texteditor derivative for people who don't want to remember everything
 ## Dependencies:
 
 ### The windowed GUI:
- -  Is written in Python 3; requires tkinter, pillow, and poppler libraries. Pillow (PIL) version 6+ (I think) -- must have ImageTk.
- -  As far as I know, the poppler dependency is why the suite can't run on Windows. Must research this and ways around it...
+ -  Is written in Python 3; requires tkinter, pillow, and poppler libraries. Pillow (PIL) version 6+ -- must have ImageTk.
+ -  As far as I know, the poppler dependency is a deal-breaker for the GUI on Windows.
 
 ### The Vim extension:
  -  Requires Vim 8+ (I think)
- -  Currently has an option Python 3 dependency which can be removed so that it can run on a system having no Python.
+ -  Currently has an optional Python 3 dependency which can be removed so that it can run on a system having no Python.
  -  Configuration script for Vim currently supports vim-plug and pathogen utilities, as well as Vim 8+ plugin functionality. For other plugin methods, it's currently DIY.
 
 ### The GNU Emacs extension:
- -  Currently requires Python 3 for its source scan functionality.
+ -  No longer requires Python 3, but has a few backend / default-case functions that need to be implemented.
 
 ### The Gedit plugin:
  -  Requires Python 3 and PyGObject. PyGObject must be new enough to have Gtk 3+ and Gedit 3+ submodules.
@@ -48,13 +48,12 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Vim: User preference may vary quite widely, so feel free to edit the plugin/memobook.vim to get desired key mappings. Please see doc/memobook.txt for mappings and command information.
  -  Gedit: Alt-m brings up an open-by-mark dialogue. Under Tools->Memobook are basic options. Please make a special note of the menu items Save (with Marks) amd Save As (with Marks). They are necessary to save mark information into the memobook. These two items will do their memobook magic while Gedit does its own file-saving magic. If a file is saved without them, mark information will not be recorded. I admit this is clumsy, but until I find a better way, this was the best option.
  -  Emacs: in memobook minor mode, all functions begin with alt-m. Then... m (mark search or), Ctrl-m (mark search and), n (add silent mark), Ctrl-n (manage silents), s (scan sources), Ctrl-s (manage sources), c (clear sources).
- -  KWrite-family: under construction.
 
 ## For the future:
  - [ ]  Fix UTF-associated problems for text files
- - [ ]  Do whatever needs to be done for portions of this suite to run on just about any Windows, MacOS, BSD, or Linux system.
  - [ ]  Better handling of what is a text file and what is not.
  - [ ]  Resolve malfunction of global Tk theme changes.
+ - [ ]  Future work: kwrite-family plugin; possibly a notepad++ plugin on Windows
 
 Author: eightbitastronomy
 
