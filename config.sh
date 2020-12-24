@@ -57,6 +57,20 @@ NOPY=0
 NOGE=0
 NOMACS=0
 
+#logging vars, additional:
+LOG=$LOC"/install.log"
+DBCREATED=0
+DBTABLED=0
+VIMRCLEADER=0
+VIMPLUGDIR="/"
+PYTHONBASHRC=0
+PYTHONEXEC="/"
+GEDIRCOPY=0
+EMACSCREATEINIT=0
+EMACSINITADDTOLIST=0
+EMACSINITREQUIRE=0
+
+
 
 
 function usage
@@ -160,6 +174,7 @@ function resolve_path_and_name # (path_to_be_resolved, base_path)
 	    return 3
 	fi
     fi
+    touch $base"/"$file
     ret_var=$base"/"$file
     return 0
 }
@@ -268,6 +283,7 @@ function plugin_vimplug  # (vimdir,vimrc,loc)
     cp -r autoload/ $LOC/
     cp -r plugin/ $LOC/
     cp -r doc/ $LOC/
+    echo "VIMPLUG=${VIMPLUG}" >> $LOG
 }
 
 
@@ -308,13 +324,15 @@ function plugin_pathogen # (vimdir,vimrc,loc)
     fi
     resolve_path "${bundledir}" "${1}"
     [[ ! $ret_var ]] && echo "failed to set bundle directory" && return 1
-    target=$ret_var
+    VIMPLUGDIR=$ret_var
     targetdirs="autoload plugin docs"
     #if [ $? -ne 0 ]; then #	    return 2 #   fi
     for sub in $targetdirs ; do
-	mkdir -p $target/memobook/$sub || return 2
-	cp $PWD/$sub/* $target/memobook/$sub/
+	mkdir -p $VIMPLUGDIR/memobook/$sub || return 2
+	cp $PWD/$sub/* $VIMPLUGDIR/memobook/$sub/
     done
+    echo "VIMPLUG=${VIMPLUG}" >> $LOG
+    echo "VIMPLUGDIR=${VIMPLUGDIR}" >> $LOG
 }
 
 
@@ -329,6 +347,7 @@ function configure_configs
     resolve_path "${LOC}" "${HOME}"
     [[ ! $ret_var ]] && echo "failed to set base dir" && exit 1
     LOC=$ret_var
+    LOG=$LOC"/install.log"
     echo "Resolved basedir: " $LOC
     # archive.db
     resolve_path_and_name "${DB}" "${LOC}"
@@ -339,10 +358,12 @@ function configure_configs
     fi
     if [ ! -f $DB ]; then
 	$SQLITE -line $DB "create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);"
+	DBCREATED=1
     else
 	if [ -z "$($SQLITE -line $DB "select * from sqlite_master where type=\"table\" and name=\"bookmarks\";")" ]; then
 	    echo "Database file found without bookmarks table. Creating..."
 	    $SQLITE -line $DB "create table bookmarks (mark NCHAR(255) NOT NULL,file NCHAR(1023) NOT NULL,type SMALLINT);"
+	    DBTABLED=1
 	else
 	    echo "Database file found. No need to create bookmarks table."
 	fi
@@ -372,6 +393,14 @@ function configure_configs
     else
 	sed -i "s@^    <index>.*</index>@    <index>${DEX}</index>@" $CONF
     fi
+    echo "LOC=${LOC}" >> $LOG
+    echo "DBCREATED=${DBCREATED}" >> $LOG
+    echo "DBTABLED=${DBTABLED}" >> $LOG
+    echo "DBADDED=${DBADDED}" >> $LOG
+    echo "NOVIM=${NOVIM}" >> $LOG
+    echo "NOPY=${NOPY}" >> $LOG
+    echo "NOGE=${NOGE}" >> $LOG
+    echo "NOMACS=${NOMACS}" >> $LOG
     echo "Prepared index.xml: " $DEX
 }
 
@@ -387,6 +416,13 @@ function configure_vim
     resolve_path_and_name "${VIMRC}" "${PWD}"
     [[ ! $ret_var ]] && echo "failed to set vimrc" && exit 1
     VIMRC=$ret_var
+    if [[ -z $(sed -n "/\:let mapleader/=" $VIMRC) ]]; then
+	echo ":let mapleader=','" >> $VIMRC
+	VIMRCLEADER=1
+    fi
+    echo "VIMDIR=${VIMDIR}" >> $LOG
+    echo "VIMRC=${VIMRC}" >> $LOG
+    echo "VIMRCLEADER=${VIMRCLEADER}" >> $LOG
     # edit in-place for memo variables:
     sed -i "s|s:memo_loc = \".*\"|s:memo_loc = \"${LOC}\"|" "autoload/memobook.vim"
     sed -i "s|s:memo_db = \".*\"|s:memo_db = \"${DB}\"|" "autoload/memobook.vim"
@@ -407,6 +443,7 @@ function configure_vim
 		(! plugin_pathogen $VIMDIR $VIMRC $LOC) && echo "failed to configure plugin utility" && exit 1
 		;;
 	    8)
+		#why do i check for this dir if i'm going to install into another??
 		if [ ! -d $VIMDIR/pack/memobook ]; then
 		    mkdir -p $VIMDIR/pack/mns/start/memobook
 		    if [ $? -ne 0 ]; then
@@ -414,6 +451,8 @@ function configure_vim
 			return
 		    fi
 		    cp -r {autoload,doc,plugin} $VIMDIR/pack/mns/start/memobook/
+		    echo "VIMPLUG=${VIMPLUG}" >> $LOG
+		    echo "VIMPLUGDIR=${VIMDER}/pack/mns/start/memobook/" >> $LOG
 		fi
 		;;
 	esac
@@ -431,7 +470,7 @@ function configure_python
 	echo "Command not found: " $PYTHONVAR
 	exit 1
     fi
-    $PYTHONVAR pyconfig.py 
+    echo $LOG | $PYTHONVAR pyconfig.py 
     if [ $? -ne 0 ]; then
 	echo "failed to configure python 3 modules"
 	exit 1
@@ -447,11 +486,19 @@ function configure_python
     ## $HOME/.local/bin seems to be a standard place...so check for its existence / add $LOC to path
     if [ -d $HOME/.local/bin ] && [ -w $HOME/.local/bin ]; then
 	cp memobook $HOME/.local/bin
+	PYTHONEXEC=$HOME/.local/bin
     else
 	cp memobook $LOC
-	    [ ! -f $HOME/.bash_profile ] && echo "Cannot add ${LOC} to path in .bash_profile" && return 1
-	    sed -i "s|PATH=.*|:${LOC} &|p" $HOME/.bash_profile
+	LOCESCAPED=$(sed "s|\/|\\\/|g" <<< $LOC)
+	if [[ ! $PATH == *${LOC}* ]]; then
+		[ ! -f $HOME/.bashrc ] && echo "Cannot add ${LOC} to path in .bashrc" && return 1
+		sed -i "s|PATH=.*|:${LOC} &|p" $HOME/.bashrc
+		PYTHONBASHRC=1
+	fi
+	PYTHONEXEC=$LOC
     fi
+    echo "PYTHONEXEC=${PYTHONEXEC}" >> $LOG
+    echo "PYTHONBASHRC=${PYTHONBASHRC}" >> $LOG
     echo "Prepared Python 3 modules with command" $PYTHONVAR
 }
 
@@ -459,7 +506,7 @@ function configure_python
 function configure_gedit
 {
     echo "Configuring Gedit plugin."
-    $PYTHONVAR pygconfig.py
+    echo $LOG | $PYTHONVAR pygconfig.py
     if [ $? -ne 0 ]; then
 	echo "failed to configure gedit modules with python 3"
 	exit 1
@@ -477,6 +524,9 @@ function configure_gedit
     fi
     cp gedit/memobookns.plugin $GEDIR
     cp gedit/memobookns.py $GEDIR
+    GEDIRCOPY=1
+    echo "GEDIRCOPY=${GEDIRCOPY}" >> $LOG
+    echo "GEDIR=${GEDIR}" >> $LOG
     echo "Prepared Gedit plugin with directory" $GEDIR
 }
 
@@ -492,11 +542,24 @@ function configure_emacs
     if [ ! -e $EMACSCONF ]; then
 	echo "(add-to-list 'load-path \"${LOC}/emacs\")" > $EMACSCONF
 	echo "(require 'memobook-mode)" >> $EMACSCONF
+	EMACSCREATEINIT=1
     else
 	if [ -f $EMACSCONF ]; then
-	    sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\")\n(require 'memobook-mode)" $EMACSCONF
+		if [[ -z $(sed -n "/(add-to-list 'load-path \"${LOC}\/emacs\")/=" $EMACSCONF) ]]; then
+			echo "(add-to-list 'load-path \"${LOC}\/emacs\")" >> $EMACSCONF
+			EMACSINITADDTOLIST=1
+		fi
+		if [[ -z $(sed -n "/(require 'memobook-mode)/=" $EMACSCONF) ]]; then
+			echo "(require 'memobook-mode)" >> $EMACSCONF
+			EMACSINITREQUIRE=1
+		fi
 	else
-	    echo "Failed to write changes to" $EMACSCONF ": path exists and is not a regular file."
+	# it is unclear why I wanted to place the mb lines next to other load-path lines.
+	#if [ -f $EMACSCONF ]; then
+	#    sed -i "/(add-to-list 'load-path/a(add-to-list 'load-path \"${LOC}\/emacs\")\n(require 'memobook-mode)" $EMACSCONF
+	#else
+		echo "Failed to write changes to" $EMACSCONF ": path exists and is not a regular file."
+		return 1
 	fi
     fi
     # edit in-place for memo variables
@@ -507,6 +570,10 @@ function configure_emacs
     sed -i "s|(defvar MB-tag \".*\"|(defvar MB-tag \"${MARK}\"|" "emacs/memobook-mode.el"
     sed -i "s|\"sqlite3 |\"${SQLITE} |g" "emacs/memobook-mode.el"
     cp -r emacs/ $LOC/
+    ([ $EMACSCREATEINIT == 1] || [ $EMACSINITADDTOLIST == 1 ] || [ $EMACSINITREQUIRE == 1 ]) && echo "EMACSCONF=${EMACSCONF}" >> $LOG
+    echo "EMACSCREATEINIT=${EMACSCREATEINIT}" >> $LOG
+    echo "EMACSINITADDTOLIST=${EMACSINITADDTOLIST}" >> $LOG
+    echo "EMACSINITREQUIRE=${EMACSINITREQUIRE}" >> $LOG
     echo "Prepared GNU Emacs el files with initialization file" $EMACSCONF
 }
 
@@ -517,7 +584,7 @@ function parse # parse functions
 {
     local ret_var=""
     # check whether user has called this script with some amount of care
-    if [ -z "$@" ]; then
+    if [[ -z "$@" ]]; then
 	while true; do
 	    read -p "Do you wish to continue with configuration without altering any options? [yN]" yn
 	    case $yn in
@@ -643,9 +710,9 @@ function parse # parse functions
 
 parse "$@"
 configure_configs
-[ $NOVIM == 0 ] && configure_vim
-[ $NOPY == 0 ] && configure_python
-[ $NOPY == 0 ] && [ $NOGE == 0 ] && configure_gedit
+[ $NOVIM == 0 ] && ( configure_vim || exit 1 )
+[ $NOPY == 0 ] && ( configure_python || exit 1 )
+[ $NOPY == 0 ] && [ $NOGE == 0 ] && ( configure_gedit || exit 1 )
 [ $NOMACS == 0 ] && configure_emacs
 
 
