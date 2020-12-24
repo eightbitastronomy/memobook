@@ -141,3 +141,4 @@ For the future:
     any Windows, MacOS, BSD, or Linux system.
  -  Better handling of what is a text file and what is not.
  -  Resolve malfunction of global Tk theme changes.
+ -
