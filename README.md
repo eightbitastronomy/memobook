@@ -49,11 +49,15 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Gedit: Alt-m brings up an open-by-mark dialogue. Under Tools->Memobook are basic options. Please make a special note of the menu items Save (with Marks) amd Save As (with Marks). They are necessary to save mark information into the memobook. These two items will do their memobook magic while Gedit does its own file-saving magic. If a file is saved without them, mark information will not be recorded. I admit this is clumsy, but until I find a better way, this was the best option.
  -  Emacs: in memobook minor mode, all functions begin with alt-m. Then... m (mark search or), Ctrl-m (mark search and), n (add silent mark), Ctrl-n (manage silents), s (scan sources), Ctrl-s (manage sources), c (clear sources).
 
+## Known Problems:
+ -  Upgrades to the base distribution can lead to problems with pillow module (pip). Thus far, the best solution has been to uninstall pillow then reinstall it. 
+
 ## For the future:
- - [ ]  Fix UTF-associated problems for text files
+ - [ ]  Rework the emacs interface.
+ - [ ]  Fix UTF-associated problems for text files.
  - [ ]  Better handling of what is a text file and what is not.
  - [ ]  Resolve malfunction of global Tk theme changes.
- - [ ]  Future work: kwrite-family plugin; possibly a notepad++ plugin on Windows
+ - [ ]  Future work: kwrite-family plugin; possibly a notepad++ plugin on Windows.
 
 Author: eightbitastronomy
 
