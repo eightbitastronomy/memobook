@@ -208,8 +208,13 @@ class TkMemobook(Memobook):
         ### So the following sub-function is a workaround to force the issue.
         def default_selection(var):
             var.set("or")
+        def lookup(toc,gl,word):
+            l = len(word)
+            for i, item in enumerate(toc):
+                if item.find(word,0,l) > -1:
+                    gl.see(i)
+                    break
         dprint(3, "\nTkMemobook::open_mark:: ")
-        #Memobook.open_mark(self,toc)
         toc = [ item for item in self.data.toc() ]
         toc.sort(key=lambda x: x.lower())
         getter = Toplevel(self.root)
@@ -217,7 +222,19 @@ class TkMemobook(Memobook):
         for item in toc:
             getter_list.insert(END, item)
         getter_list.pack(fill="both", expand="true")
+        quick_var = StringVar()
+        quick_var.trace_add("write",
+                            lambda i,j,k: lookup(toc,getter_list,quick_var.get()))
+        quick_frame = Frame(getter)
+        quick_label = Label(quick_frame,
+                            text="Quick lookup:")
+        quick_enter = Entry(quick_frame,
+                            textvariable=quick_var,
+                            width=24)
+        quick_label.pack(side="left")
+        quick_enter.pack(side="left")
         button_frame = Frame(getter)
+        
         logic_variable = StringVar(None, "or")
         radiobutt_OR = Radiobutton(button_frame,
                                    text="OR",
@@ -241,6 +258,7 @@ class TkMemobook(Memobook):
         cancbutt.pack(side="left")
         retbutt.pack(side="left")
         button_frame.pack(side="bottom")
+        quick_frame.pack(side="bottom")
         radiobutt_OR.invoke()
 
 

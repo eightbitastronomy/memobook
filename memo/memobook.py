@@ -83,7 +83,7 @@ class Memobook:
             exc = self.data.get_last_error()
             if exc:
                 dprint(2, "Failed to open DatabaseBinding. Opening FileBinding instead. ")
-                messagebox.showinfo( "Data error","Unable to open data source: " + str(exc) )
+                #messagebox.showinfo( "Data error","Unable to open data source: " + str(exc) )
                 self.data = FileBinding(self.ctrl) # FileBinding is no longer a reasonable fallback. Should remove this.
         try:
             if "index" in kwargs.keys():
