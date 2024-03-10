@@ -53,11 +53,10 @@ A notepad/texteditor derivative for people who don't want to remember everything
  -  Upgrades to the base distribution can lead to problems with pillow module (pip). Thus far, the best solution has been to uninstall pillow then reinstall it. 
 
 ## For the future:
+ - [ ]  Rework for Wx, updating Tk interface for compatibility
  - [ ]  Rework the emacs interface.
  - [ ]  Fix UTF-associated problems for text files.
  - [ ]  Better handling of what is a text file and what is not.
- - [ ]  Resolve malfunction of global Tk theme changes.
- - [ ]  Future work: kwrite-family plugin; possibly a notepad++ plugin on Windows.
 
 Author: eightbitastronomy
 
