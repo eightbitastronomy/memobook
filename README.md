@@ -58,7 +58,7 @@ A notepad/texteditor derivative for people who don't want to remember everything
  - [ ]  Fix UTF-associated problems for text files.
  - [ ]  Better handling of what is a text file and what is not.
 
-Author: eightbitastronomy
+Author: Miguel Abele 
 
 License: see file, LICENSE, provided with source code.
 

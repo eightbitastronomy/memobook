@@ -1,6 +1,6 @@
 *memobook.txt*
 
-Author:  eightbitastronomy (eightbitastronomy@protonmail.com)
+Author:  Miguel Abele (eightbitastronomy@protonmail.com)
 Repo:    https://github.com/eightbitastronomy/memobook
 License: See LICENSE.TXT
 

@@ -14,8 +14,8 @@
 #   Despite this, changing the DEFAULT<VAR> vars below might be useful and
 #   would break the least of the mechanics of the script if done poorly.
 #
-#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2020.
+#  Author: Miguel Abele
+#  Copyrighted by Miguel Abele, 2020.
 #
 #  License information:
 #

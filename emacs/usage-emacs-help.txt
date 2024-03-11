@@ -1,5 +1,5 @@
 Memobook Note Suite
-Author: eightbitastronomy
+Author: Miguel Abele
 License: see file, LICENSE, provided with source code.
 
 

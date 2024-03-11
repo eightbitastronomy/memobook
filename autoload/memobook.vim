@@ -1,8 +1,8 @@
 " ###############################################################################################
 "   memobook.vim: autoload file / definitions to implement memobook functionality
 " 
-"   Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-"   Copyrighted by eightbitastronomy, 2020.
+"   Author: Miguel Abele
+"   Copyrighted by Miguel Abele, 2020.
 " 
 "   License information:
 " 
@@ -105,7 +105,7 @@ function! s:Edit(logic,marklist)
 		if empty(answerlist)
 			return
 		endif
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 		if len(answerlist) == 1 
 			let path = get(flist,answerlist[0],"")
 			if path != ""
@@ -191,12 +191,31 @@ function! s:Filesbymark(mk)
 	      let groups = split(dbretval,"\n\n")
 	      if !empty(groups)
 	      	 for str in groups
-		     let subtuple = split(str)
-		     let i = index(subtuple,"mark")
-		     let j = index(subtuple,"file")
-		     let k = index(subtuple,"type")
-		     call add(retval,[subtuple[i+2],subtuple[j+2],subtuple[k+2]])
-		 endfor
+             "Previous method would split any paths containing a space,
+             "breaking downstream load functionality:
+		     "let subtuple = split(str)
+		     "let i = index(subtuple,"mark")
+		     "let j = index(subtuple,"file")
+		     "let k = index(subtuple,"type")
+		     "call add(retval,[subtuple[i+2],subtuple[j+2],subtuple[k+2]])
+		     let linebreaktuple = split(str,"\n")
+                let i = 0
+                let filebuff = ""
+                for ln in linebreaktuple
+                    let i = match(ln, "file")
+                    if i > 0
+                        let linebuff = remove(linebreaktuple, i)
+                        let filebuff = remove(split(linebuff, "file = "),1)
+                        "echo "\nLB:" linebuff
+                        "echo "\nFB:" filebuff
+                        break
+                    endif
+                endfor
+                let subtuple = split(join(linebreaktuple," "), " ")
+                let j = index(subtuple,"mark")
+                let k = index(subtuple,"type")
+                call add(retval, [subtuple[j+2], filebuff, subtuple[k+2]])
+		    endfor
 	      endif
 	  endif
 	  return retval
@@ -377,15 +396,15 @@ function! s:ParseFile(filename)
 	if expand('%:p') == ''
 		let curbuf = -1
 	else
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":hide enew " 
 	exec ":hide e " . a:filename
-	let editbuf = bufnr()
+	let editbuf = bufnr("%")
 	let retmarks = s:Parsebuffer()
 	if curbuf < 0
 		exec ":enew"
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf
@@ -578,11 +597,11 @@ function! memobook#Scann()
 	if expand('%:p') == ''
 		let curbuf = -1
 	else
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":hide enew " 
 	exec ":hide e " . s:memo_econf
-	let editbuf = bufnr()
+	let editbuf = bufnr("%")
 	call cursor(1,1)
 	let dirlist = []
 	let pos_db_begin = search("<db>","W")
@@ -601,7 +620,7 @@ function! memobook#Scann()
 	endif
 	if curbuf < 0
 		exec ":enew"
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf
@@ -614,10 +633,10 @@ function! memobook#Scann()
 	if expand('%:p') == ''
 		let curbuf = -1
 	else
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":hide enew " 
-	let editbuf = bufnr()
+	let editbuf = bufnr("%")
 	for dir in dirlist
 		let fileslist = split(globpath(dir,'**'),'\n')
 		for file in fileslist
@@ -643,7 +662,7 @@ function! memobook#Scann()
 	endfor
 	if curbuf < 0
 		exec ":enew!"
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf
@@ -654,11 +673,11 @@ function! memobook#ScanManage()
 	if expand('%:p') == ''
 		let curbuf = -1
 	else
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":hide enew " 
 	exec ":hide e " . s:memo_econf
-	let editbuf = bufnr()
+	let editbuf = bufnr("%")
 	call cursor(1,1)
 	let dirlist = []
 	let pos_db_begin = search("<db>","W")
@@ -677,7 +696,7 @@ function! memobook#ScanManage()
 	else
 		if curbuf < 0
 			exec ":enew"
-			let curbuf = bufnr()
+			let curbuf = bufnr("%")
 		endif
 		exec ":bwipeout" . editbuf
 		exec ":b " . curbuf
@@ -697,7 +716,7 @@ function! memobook#ScanManage()
 	if oldlist == dirlist
 		if curbuf < 0
 			exec ":enew"
-			let curbuf = bufnr()
+			let curbuf = bufnr("%")
 		endif
 		exec ":bwipeout" . editbuf
 		exec ":b " . curbuf
@@ -727,7 +746,7 @@ function! memobook#ScanManage()
 	write
 	if curbuf < 0
 		exec ":enew"
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf
@@ -745,7 +764,7 @@ endfunction
 
 function! s:SilentLoad(fname)
 	let retlist = []
-	let curbuf = bufnr()
+	let curbuf = bufnr("%")
 	exec ":hide view " . s:memo_dex
 	call cursor(1,1)
 	let pos_path = search(a:fname,"W")
@@ -761,7 +780,7 @@ function! s:SilentLoad(fname)
 			call add(retlist,rstring)	
 		endwhile
 	endif
-	exec ":bwipeout" . bufnr()
+	exec ":bwipeout" . bufnr("%")
 	exec ":b " . curbuf
 	return retlist
 endfunction
@@ -797,11 +816,11 @@ function! s:SilentWrite(fname)
 	if expand('%:p') == ''
 		let curbuf = -1
 	else
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":hide enew "
 	exec ":hide e ". s:memo_dex
-	let editbuf = bufnr()
+	let editbuf = bufnr("%")
 	" check dex for file name
 	" if present, rewrite marks
 	" else, append new entry
@@ -857,7 +876,7 @@ function! s:SilentWrite(fname)
 	write
 	if curbuf < 0
 		exec ":enew"
-		let curbuf = bufnr()
+		let curbuf = bufnr("%")
 	endif
 	exec ":bwipeout" . editbuf
 	exec ":b " . curbuf 
