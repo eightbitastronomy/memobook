@@ -1,8 +1,8 @@
 ###############################################################################################
 #  hscroll.py: Tk widgets with scrollbars and additional functionality
 #
-#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2020.
+#  Author: Miguel Abele
+#  Copyrighted by Miguel Abele, 2020.
 #
 #  License information:
 #

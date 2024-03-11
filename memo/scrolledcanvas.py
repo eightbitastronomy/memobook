@@ -1,8 +1,8 @@
 ###############################################################################################
 #  scrolledcanvas.py: scrollable canvas parent class for other canvases
 #
-#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2020.
+#  Author: Miguel Abele
+#  Copyrighted by Miguel Abele, 2020.
 #
 #  License information:
 #

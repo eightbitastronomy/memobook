@@ -1,8 +1,8 @@
 ###############################################################################################
 #  gmemobook.py: the Gtk GUI object for plugin use
 #
-#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2020.
+#  Author: Miguel Abele
+#  Copyrighted by Miguel Abele, 2020.
 #
 #  License information:
 #

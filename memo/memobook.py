@@ -1,8 +1,8 @@
 ###############################################################################################
 #  memobook.py: parent class for the GUI object that runs the show
 #
-#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2020.
+#  Author: Miguel Abele
+#  Copyrighted by Miguel Abele, 2020.
 #
 #  License information:
 #

@@ -1,8 +1,8 @@
 ###############################################################################################
 #  page.py: Page, TextPage, ImagePage, and PDFPage for book.py
 #
-#  Author (pseudonomously): eightbitastronomy (eightbitastronomy@protonmail.com)
-#  Copyrighted by eightbitastronomy, 2020.
+#  Author: Miguel Abele
+#  Copyrighted by Miguel Abele, 2020.
 #
 #  License information:
 #
