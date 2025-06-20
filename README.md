@@ -1,6 +1,7 @@
 # Memobook
 
-A notepad/texteditor derivative for people who don't want to remember everything ever.
+Project discontinued. Please see my MemoServ and MemoFace projects, anyone who accidentally found their way to this page.
+ -  MemoBook: a notepad/texteditor derivative for people who don't want to remember everything ever.
  -  If you commonly write down things you've learned in plain text files -- because there's just too much to remember --
  -  ...and months later you need that information but can't remember where you wrote it down...
  -  Then sure, you could grep your home directory to death. Or, this is the application for you.
